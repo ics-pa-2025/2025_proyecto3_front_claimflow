@@ -1,0 +1,71 @@
+export type Role = 'Admin' | 'Ventas' | 'Soporte' | 'Facturacion';
+
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+    avatar?: string;
+}
+
+export interface Client {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    projects: Project[];
+}
+
+export interface Project {
+    id: string;
+    name: string;
+    type: string;
+    clientId: string;
+}
+
+export type ClaimPriority = 'Alta' | 'Media' | 'Baja';
+export type ClaimCriticality = 'Alta' | 'Media' | 'Baja';
+export type ClaimStatus = 'Abierto' | 'En Proceso' | 'Cerrado';
+export type ClaimArea = 'Ventas' | 'Soporte' | 'Facturacion';
+
+export interface Claim {
+    id: string;
+    title: string; // Derived from description or separate field? Assuming description for now.
+    description: string;
+    type: string;
+    priority: ClaimPriority;
+    criticality: ClaimCriticality;
+    status: ClaimStatus;
+    area: ClaimArea;
+    clientId: string;
+    projectId: string;
+    assignedTo?: string; // User ID
+    createdAt: string;
+    updatedAt: string;
+    files?: string[];
+    history: ClaimHistory[];
+    comments: Comment[];
+}
+
+export interface ClaimHistory {
+    id: string;
+    date: string;
+    action: string;
+    user: string; // User Name or ID
+}
+
+export interface Comment {
+    id: string;
+    userId: string;
+    userName: string;
+    content: string;
+    createdAt: string;
+}
+
+export interface Notification {
+    id: string;
+    type: 'info' | 'success' | 'warning' | 'error';
+    message: string;
+    read: boolean;
+    createdAt: string;
+}
