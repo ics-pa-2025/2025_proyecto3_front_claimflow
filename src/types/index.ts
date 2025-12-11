@@ -11,7 +11,9 @@ export interface User {
 export interface Client {
     id: string;
     name: string;
+    lastName: string;
     email: string;
+    dni: string;
     phone?: string;
     projects: Project[];
 }

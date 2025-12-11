@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 name: apiUser.fullname,
                 email: apiUser.email,
                 role: 'User', // Default role as it's not in the login response yet
-                avatar: `https://ui-avatars.com/api/?name=${apiUser.fullname}&background=random`
+                avatar: 'https://ui-avatars.com/api/?name=' + apiUser.fullname + '&background=random'
             };
 
             Cookies.set('access_token', accessToken, { expires: 1 }); // 1 day

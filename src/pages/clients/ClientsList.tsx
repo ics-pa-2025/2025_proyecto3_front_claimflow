@@ -1,11 +1,71 @@
-import React from 'react';
-import { Plus, Search, Building2, Phone, Folder } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Plus, Search, Building2, Phone, Folder, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
-import { MOCK_CLIENTS } from '../../lib/mock-data';
+import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
+import { Client } from '../../types';
 
 export const ClientsList = () => {
+    const navigate = useNavigate();
+    const [clients, setClients] = useState<Client[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchClients = async () => {
+            try {
+                const token = Cookies.get('access_token');
+                const response = await fetch('http://localhost:3000/cliente', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar clientes');
+                }
+
+                const data = await response.json();
+                // Map backend data to Client interface
+                const mappedClients: Client[] = data.map((item: any) => ({
+                    id: item._id,
+                    name: item.nombre,
+                    lastName: item.apellido,
+                    email: item.email,
+                    dni: item.dni,
+                    phone: item.telefono,
+                    projects: item.proyectos || []
+                }));
+
+                setClients(mappedClients);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchClients();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-4 text-red-500 bg-red-50 rounded-md">
+                {error}
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -13,14 +73,14 @@ export const ClientsList = () => {
                     <h1 className="text-3xl font-bold text-secondary-900">Clientes</h1>
                     <p className="text-secondary-500">Gestiona la cartera de clientes y sus proyectos</p>
                 </div>
-                <Button>
+                <Button onClick={() => navigate('/clients/new')}>
                     <Plus className="mr-2 h-4 w-4" />
                     Nuevo Cliente
                 </Button>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {MOCK_CLIENTS.map((client) => (
+                {clients.map((client) => (
                     <Card key={client.id} hoverEffect>
                         <CardHeader className="flex flex-row items-start justify-between pb-2">
                             <div className="flex items-center gap-3">
@@ -28,8 +88,9 @@ export const ClientsList = () => {
                                     <Building2 className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-secondary-900">{client.name}</h3>
+                                    <h3 className="font-semibold text-secondary-900">{client.name} {client.lastName}</h3>
                                     <p className="text-sm text-secondary-500">{client.email}</p>
+                                    <p className="text-xs text-secondary-400">DNI: {client.dni}</p>
                                 </div>
                             </div>
                         </CardHeader>
@@ -56,7 +117,15 @@ export const ClientsList = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="mt-4 pt-4 border-t border-secondary-100 flex justify-end">
+                            <div className="mt-4 pt-4 border-t border-secondary-100 flex justify-end gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-primary-600 hover:text-primary-700 hover:bg-primary-50"
+                                    onClick={() => navigate(`/clients/edit/${client.id}`)}
+                                >
+                                    Editar
+                                </Button>
                                 <Button variant="ghost" size="sm" className="text-primary-600 hover:text-primary-700 hover:bg-primary-50">
                                     Ver Detalles
                                 </Button>

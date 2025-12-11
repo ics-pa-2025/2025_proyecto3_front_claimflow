@@ -8,12 +8,19 @@ import { ClaimsList } from './pages/claims/ClaimsList';
 import { CreateClaim } from './pages/claims/CreateClaim';
 import { UsersList } from './pages/users/UsersList';
 import { ClientsList } from './pages/clients/ClientsList';
+import { CreateClient } from './pages/clients/CreateClient';
+import { EditClient } from './pages/clients/EditClient';
 import { ProjectsList } from './pages/projects/ProjectsList';
 import { ClaimDetail } from './pages/claims/ClaimDetail';
 import { Settings } from './pages/Settings';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Or a proper loading spinner
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -38,6 +45,8 @@ function App() {
             <Route path="claims/:id" element={<ClaimDetail />} />
             <Route path="users" element={<UsersList />} />
             <Route path="clients" element={<ClientsList />} />
+            <Route path="clients/new" element={<CreateClient />} />
+            <Route path="clients/edit/:id" element={<EditClient />} />
             <Route path="projects" element={<ProjectsList />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
