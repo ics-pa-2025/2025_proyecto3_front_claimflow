@@ -11,9 +11,10 @@ import logo from '../assets/logo.png';
 
 export const Login = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, error, isLoading } = useAuth();
     const cardRef = useRef<HTMLDivElement>(null);
     const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
 
     useEffect(() => {
         anime({
@@ -26,10 +27,14 @@ export const Login = () => {
         });
     }, []);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        login(email);
-        navigate('/');
+        try {
+            await login(email, password);
+            navigate('/');
+        } catch (err) {
+            // Error is handled in context and displayed below
+        }
     };
 
     return (
@@ -52,6 +57,11 @@ export const Login = () => {
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleLogin} className="space-y-4">
+                            {error && (
+                                <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md border border-red-200">
+                                    {error}
+                                </div>
+                            )}
                             <div className="space-y-2">
                                 <Input
                                     id="email"
@@ -69,10 +79,12 @@ export const Login = () => {
                                     label="Contraseña"
                                     type="password"
                                     required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                 />
                             </div>
-                            <Button type="submit" className="w-full" size="lg">
-                                Ingresar
+                            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                                {isLoading ? 'Ingresando...' : 'Ingresar'}
                             </Button>
                         </form>
                     </CardContent>

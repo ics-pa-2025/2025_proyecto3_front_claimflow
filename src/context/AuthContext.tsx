@@ -1,53 +1,85 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
 import { User } from '../types';
-import { MOCK_USERS } from '../lib/mock-data';
 
 interface AuthContextType {
     user: User | null;
-    login: (email: string) => void;
+    login: (email: string, password: string) => Promise<void>;
     logout: () => void;
     isAuthenticated: boolean;
+    isLoading: boolean;
+    error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Check local storage or session
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
+        const checkAuth = async () => {
+            const token = Cookies.get('access_token');
+            const storedUser = localStorage.getItem('user');
+
+            if (token && storedUser) {
+                // Ideally validate token with backend here
+                setUser(JSON.parse(storedUser));
+            }
+            setIsLoading(false);
+        };
+        checkAuth();
     }, []);
 
-    const login = (email: string) => {
-        // Mock login logic
-        let foundUser = MOCK_USERS.find(u => u.email === email);
+    const login = async (email: string, password: string) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await fetch('http://localhost:3001/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
 
-        if (!foundUser) {
-            // Create a dynamic user for testing with any email
-            foundUser = {
-                id: Math.random().toString(36).substr(2, 9),
-                name: email.split('@')[0],
-                email: email,
-                role: 'User', // Default role
-                avatar: `https://ui-avatars.com/api/?name=${email.split('@')[0]}&background=random`
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al iniciar sesión');
+            }
+
+            const data = await response.json();
+            const { accessToken, user: apiUser } = data;
+
+            // Map API user to Frontend User type
+            const mappedUser: User = {
+                id: apiUser.id,
+                name: apiUser.fullname,
+                email: apiUser.email,
+                role: 'User', // Default role as it's not in the login response yet
+                avatar: `https://ui-avatars.com/api/?name=${apiUser.fullname}&background=random`
             };
-        }
 
-        setUser(foundUser);
-        localStorage.setItem('user', JSON.stringify(foundUser));
+            Cookies.set('access_token', accessToken, { expires: 1 }); // 1 day
+            localStorage.setItem('user', JSON.stringify(mappedUser));
+            setUser(mappedUser);
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const logout = () => {
-        setUser(null);
+        Cookies.remove('access_token');
         localStorage.removeItem('user');
+        setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isLoading, error }}>
             {children}
         </AuthContext.Provider>
     );
