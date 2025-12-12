@@ -5,37 +5,65 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Cookies from 'js-cookie';
+import { getClients } from '../../services/clients.service';
+import { Client } from '../../types';
 
 export const EditProject = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [clients, setClients] = useState<Client[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         nombre: '',
-        descripcion: ''
+        descripcion: '',
+        clienteId: ''
     });
 
     useEffect(() => {
-        const fetchProject = async () => {
+        const loadData = async () => {
             try {
                 const token = Cookies.get('access_token');
-                const response = await fetch(`http://localhost:3000/proyecto/${id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                if (!token) return;
 
-                if (!response.ok) {
+                // Fetch Clients and Project in parallel
+                const [clientsData, projectResponse] = await Promise.all([
+                    getClients(token),
+                    fetch(`http://localhost:3000/proyecto/${id}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                // Process Clients
+                const mappedClients: Client[] = clientsData.map((item: any) => ({
+                    id: item._id,
+                    name: item.nombre,
+                    lastName: item.apellido,
+                    email: item.email,
+                    dni: item.dni,
+                    phone: item.telefono,
+                    projects: item.proyectos || []
+                }));
+                setClients(mappedClients);
+
+                // Process Project
+                if (!projectResponse.ok) {
                     throw new Error('Error al cargar el proyecto');
                 }
+                const projectData = await projectResponse.json();
 
-                const data = await response.json();
+                // Handle clienteId which might be an object (populated) or string
+                const clienteId = projectData.clienteId && typeof projectData.clienteId === 'object'
+                    ? projectData.clienteId._id
+                    : projectData.clienteId || '';
+
                 setFormData({
-                    nombre: data.nombre,
-                    descripcion: data.descripcion
+                    nombre: projectData.nombre,
+                    descripcion: projectData.descripcion,
+                    clienteId: clienteId
                 });
+
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -44,11 +72,11 @@ export const EditProject = () => {
         };
 
         if (id) {
-            fetchProject();
+            loadData();
         }
     }, [id]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -138,6 +166,24 @@ export const EditProject = () => {
                                     value={formData.descripcion}
                                     onChange={handleChange}
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="clienteId" className="text-sm font-medium text-secondary-700">
+                                    Cliente
+                                </label>
+                                <select
+                                    id="clienteId"
+                                    className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm placeholder:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.clienteId}
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Seleccionar cliente...</option>
+                                    {clients.map(client => (
+                                        <option key={client.id} value={client.id}>
+                                            {client.name} {client.lastName} - {client.email}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 

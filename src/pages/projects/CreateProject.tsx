@@ -1,21 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Cookies from 'js-cookie';
+import { getClients } from '../../services/clients.service';
+import { Client } from '../../types';
 
 export const CreateProject = () => {
     const navigate = useNavigate();
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoadingClients, setIsLoadingClients] = useState(true);
+    const [clients, setClients] = useState<Client[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         nombre: '',
-        descripcion: ''
+        descripcion: '',
+        clienteId: ''
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    useEffect(() => {
+        const fetchClients = async () => {
+            try {
+                const token = Cookies.get('access_token');
+                if (!token) return;
+                const data = await getClients(token);
+                // Map backend data to Client interface if needed, but getClients 
+                // in clients.service often returns the raw BE response.
+                // Assuming data is Client[] based on previous context or we map it.
+                // In ClientsList we mapped it manually. Let's map it here too to be safe/consistent.
+                const mappedClients: Client[] = data.map((item: any) => ({
+                    id: item._id,
+                    name: item.nombre,
+                    lastName: item.apellido,
+                    email: item.email,
+                    dni: item.dni,
+                    phone: item.telefono,
+                    projects: item.proyectos || []
+                }));
+                setClients(mappedClients);
+            } catch (err: any) {
+                console.error('Error fetching clients:', err);
+                // Don't block creation if clients fail to load, just show empty list
+            } finally {
+                setIsLoadingClients(false);
+            }
+        };
+
+        fetchClients();
+    }, []);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -97,6 +133,24 @@ export const CreateProject = () => {
                                     value={formData.descripcion}
                                     onChange={handleChange}
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="clienteId" className="text-sm font-medium text-secondary-700">
+                                    Cliente
+                                </label>
+                                <select
+                                    id="clienteId"
+                                    className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm placeholder:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={formData.clienteId}
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Seleccionar cliente...</option>
+                                    {clients.map(client => (
+                                        <option key={client.id} value={client.id}>
+                                            {client.name} {client.lastName} - {client.email}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
