@@ -13,3 +13,18 @@ export const getClients = async (token: string) => {
 
     return response.json();
 };
+
+export const deleteClient = async (id: string, token: string) => {
+    const response = await fetch(`${CLIENTS_API}/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al eliminar cliente');
+    }
+
+    return response.json();
+};

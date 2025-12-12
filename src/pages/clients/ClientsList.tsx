@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Building2, Phone, Folder, Loader2 } from 'lucide-react';
+import { Plus, Search, Building2, Phone, Folder, Loader2, Trash } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import { Client } from '../../types';
+import { getClients, deleteClient } from '../../services/clients.service';
 
 export const ClientsList = () => {
     const navigate = useNavigate();
@@ -13,21 +14,26 @@ export const ClientsList = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const handleDelete = async (id: string) => {
+        if (window.confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
+            try {
+                const token = Cookies.get('access_token');
+                if (!token) return;
+                await deleteClient(id, token);
+                setClients(clients.filter(client => client.id !== id));
+            } catch (err: any) {
+                setError(err.message);
+            }
+        }
+    };
+
     useEffect(() => {
         const fetchClients = async () => {
             try {
                 const token = Cookies.get('access_token');
-                const response = await fetch('http://localhost:3000/cliente', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                if (!token) return;
+                const data = await getClients(token);
 
-                if (!response.ok) {
-                    throw new Error('Error al cargar clientes');
-                }
-
-                const data = await response.json();
                 // Map backend data to Client interface
                 const mappedClients: Client[] = data.map((item: any) => ({
                     id: item._id,
@@ -93,6 +99,14 @@ export const ClientsList = () => {
                                     <p className="text-xs text-secondary-400">DNI: {client.dni}</p>
                                 </div>
                             </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(client.id)}
+                                className="text-secondary-400 hover:text-red-600 hover:bg-red-50 -mr-2"
+                            >
+                                <Trash className="h-4 w-4" />
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             <div className="mt-4 space-y-3">
