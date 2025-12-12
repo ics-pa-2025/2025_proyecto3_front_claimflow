@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Save, X, Paperclip, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { createClaim } from '../../services/claims.service';
+import { createClaim, getClaimById, updateClaim } from '../../services/claims.service';
 import { getProjects } from '../../services/projects.service';
 import { getClients } from '../../services/clients.service';
 import Cookies from 'js-cookie';
 
 export const CreateClaim = () => {
     const navigate = useNavigate();
+    const { id } = useParams();
+    const isEditMode = !!id;
+
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -24,7 +27,7 @@ export const CreateClaim = () => {
         descripcion: '',
         proyecto: '',
         cliente: '',
-        area: 'Sistemas', // Default value
+        area: 'Sistemas',
         file: null as File | null
     });
 
@@ -42,25 +45,33 @@ export const CreateClaim = () => {
                 setProjects(projectsData);
                 setClients(clientsData);
 
-                // Set default values if available
-                if (projectsData.length > 0) setFormData(prev => ({ ...prev, proyecto: projectsData[0]._id }));
-                if (clientsData.length > 0) {
-                    // The client API returns objects with _id.
-                    // IMPORTANT: clientsData might be raw from DB, check structure.
-                    // Based on ClientsList: mappedClients has id, but raw response has _id.
-                    // The service returns raw response. So we use _id.
-                    setFormData(prev => ({ ...prev, cliente: clientsData[0]._id }));
+                if (isEditMode) {
+                    const claim = await getClaimById(id, token);
+                    setFormData({
+                        tipo: claim.tipo,
+                        prioridad: claim.prioridad,
+                        criticidad: claim.criticidad,
+                        descripcion: claim.descripcion,
+                        proyecto: claim.proyecto?._id || claim.proyecto,
+                        cliente: claim.cliente?._id || claim.cliente,
+                        area: claim.area,
+                        file: null
+                    });
+                } else {
+                    // Set default values only in create mode
+                    if (projectsData.length > 0) setFormData(prev => ({ ...prev, proyecto: projectsData[0]._id }));
+                    if (clientsData.length > 0) setFormData(prev => ({ ...prev, cliente: clientsData[0]._id }));
                 }
 
             } catch (err: any) {
                 console.error("Error loading data", err);
-                setError("Error al cargar datos iniciales: " + err.message);
+                setError("Error al cargar datos: " + err.message);
             } finally {
                 setIsFetching(false);
             }
         };
         loadData();
-    }, []);
+    }, [id, isEditMode]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -95,7 +106,12 @@ export const CreateClaim = () => {
                 data.append('file', formData.file);
             }
 
-            await createClaim(data, token);
+            if (isEditMode) {
+                await updateClaim(id, data, token);
+            } else {
+                await createClaim(data, token);
+            }
+
             navigate('/claims');
         } catch (err: any) {
             setError(err.message);
@@ -115,7 +131,7 @@ export const CreateClaim = () => {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-secondary-900">Nuevo Reclamo</h1>
+                <h1 className="text-3xl font-bold text-secondary-900">{isEditMode ? 'Editar Reclamo' : 'Nuevo Reclamo'}</h1>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -238,6 +254,11 @@ export const CreateClaim = () => {
                                     className="cursor-pointer"
                                 />
                             </div>
+                            {isEditMode && (
+                                <p className="text-xs text-secondary-500">
+                                    Suba un nuevo archivo para reemplazar el existente. Deje en blanco para mantener el actual.
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex justify-end gap-4 pt-4">
@@ -247,7 +268,7 @@ export const CreateClaim = () => {
                             </Button>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Guardar Reclamo
+                                {isEditMode ? 'Actualizar Reclamo' : 'Guardar Reclamo'}
                             </Button>
                         </div>
                     </CardContent>

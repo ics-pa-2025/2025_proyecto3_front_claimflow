@@ -44,6 +44,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="claims" element={<ClaimsList />} />
             <Route path="claims/new" element={<CreateClaim />} />
+            <Route path="claims/:id/edit" element={<CreateClaim />} />
             <Route path="claims/:id" element={<ClaimDetail />} />
             <Route path="users" element={<UsersList />} />
             <Route path="clients" element={<ClientsList />} />

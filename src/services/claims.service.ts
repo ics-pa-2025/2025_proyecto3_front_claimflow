@@ -35,3 +35,33 @@ export const getClaims = async (token: string) => {
 
     return response.json();
 };
+
+export const getClaimById = async (id: string, token: string) => {
+    const response = await fetch(`${CLAIMS_API}/${id}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al cargar el reclamo');
+    }
+
+    return response.json();
+};
+
+export const updateClaim = async (id: string, data: FormData, token: string) => {
+    const response = await fetch(`${CLAIMS_API}/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        body: data
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al actualizar el reclamo');
+    }
+
+    return response.json();
+};
