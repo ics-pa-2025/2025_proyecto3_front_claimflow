@@ -4,6 +4,8 @@ import { LayoutDashboard, Users, Briefcase, FileText, Settings, LogOut, Building
 import { cn } from '../../lib/utils';
 import logo from '../../assets/logo.png';
 
+import { useAuth } from '../../context/AuthContext';
+
 interface SidebarProps {
     isOpen: boolean;
     isMobile: boolean;
@@ -11,6 +13,7 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
+    const { logout } = useAuth();
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
         { icon: FileText, label: 'Reclamos', to: '/claims' },
@@ -82,6 +85,7 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
 
                 <div className="border-t border-secondary-200 p-4">
                     <button
+                        onClick={logout}
                         className={cn(
                             "flex w-full items-center gap-3 rounded-lg py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors",
                             isOpen ? "px-3" : "justify-center px-2"

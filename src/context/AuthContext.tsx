@@ -72,10 +72,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const logout = () => {
-        Cookies.remove('access_token');
-        localStorage.removeItem('user');
-        setUser(null);
+    const logout = async () => {
+        try {
+            const token = Cookies.get('access_token');
+            if (token) {
+                await fetch('http://localhost:3001/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error logging out:', error);
+        } finally {
+            Cookies.remove('access_token');
+            localStorage.removeItem('user');
+            setUser(null);
+        }
     };
 
     return (
