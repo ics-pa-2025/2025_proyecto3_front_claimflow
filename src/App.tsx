@@ -11,6 +11,8 @@ import { ClientsList } from './pages/clients/ClientsList';
 import { CreateClient } from './pages/clients/CreateClient';
 import { EditClient } from './pages/clients/EditClient';
 import { ProjectsList } from './pages/projects/ProjectsList';
+import { CreateProject } from './pages/projects/CreateProject';
+import { EditProject } from './pages/projects/EditProject';
 import { ClaimDetail } from './pages/claims/ClaimDetail';
 import { Settings } from './pages/Settings';
 
@@ -48,6 +50,8 @@ function App() {
             <Route path="clients/new" element={<CreateClient />} />
             <Route path="clients/edit/:id" element={<EditClient />} />
             <Route path="projects" element={<ProjectsList />} />
+            <Route path="projects/new" element={<CreateProject />} />
+            <Route path="projects/edit/:id" element={<EditProject />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
