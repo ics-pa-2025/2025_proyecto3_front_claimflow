@@ -17,7 +17,8 @@ export const CreateClaim = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [projects, setProjects] = useState<any[]>([]);
+    const [allProjects, setAllProjects] = useState<any[]>([]); // Store all projects
+    const [filteredProjects, setFilteredProjects] = useState<any[]>([]); // Store filtered projects
     const [clients, setClients] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
@@ -42,25 +43,38 @@ export const CreateClaim = () => {
                     getClients(token)
                 ]);
 
-                setProjects(projectsData);
+                setAllProjects(projectsData);
+                setFilteredProjects(projectsData); // Initially show all
                 setClients(clientsData);
 
                 if (isEditMode) {
                     const claim = await getClaimById(id, token);
+                    const projectId = claim.proyecto?._id || claim.proyecto;
+                    const clientId = claim.cliente?._id || claim.cliente;
+
                     setFormData({
                         tipo: claim.tipo,
                         prioridad: claim.prioridad,
                         criticidad: claim.criticidad,
                         descripcion: claim.descripcion,
-                        proyecto: claim.proyecto?._id || claim.proyecto,
-                        cliente: claim.cliente?._id || claim.cliente,
+                        proyecto: projectId,
+                        cliente: clientId,
                         area: claim.area,
                         file: null
                     });
+                    // Filter projects based on the loaded (and set) client
+                    if (clientId) {
+                        const clientProjects = projectsData.filter((p: any) =>
+                            (p.clienteId && (p.clienteId === clientId || p.clienteId._id === clientId))
+                        );
+                        setFilteredProjects(clientProjects);
+                    }
+
                 } else {
                     // Set default values only in create mode
-                    if (projectsData.length > 0) setFormData(prev => ({ ...prev, proyecto: projectsData[0]._id }));
-                    if (clientsData.length > 0) setFormData(prev => ({ ...prev, cliente: clientsData[0]._id }));
+                    // We don't auto-set defaults anymore to avoid confusion, or we do it carefully.
+                    // Let's leave them empty to force selection, or select first if available.
+                    // But with inter-dependency, empty is safer until user picks one.
                 }
 
             } catch (err: any) {
@@ -72,6 +86,58 @@ export const CreateClaim = () => {
         };
         loadData();
     }, [id, isEditMode]);
+
+    // Handle Client Change -> Filter Projects
+    const handleClientChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedClientId = e.target.value;
+        const previousClientId = formData.cliente;
+
+        // Update Form
+        setFormData(prev => ({ ...prev, cliente: selectedClientId }));
+
+        // Filter Projects
+        if (selectedClientId) {
+            const clientProjects = allProjects.filter(p =>
+                p.clienteId && (p.clienteId === selectedClientId || p.clienteId._id === selectedClientId)
+            );
+            setFilteredProjects(clientProjects);
+
+            // If current selected project is NOT in the new list, clear it
+            const isCurrentProjectValid = clientProjects.some(p => p._id === formData.proyecto);
+            if (!isCurrentProjectValid) {
+                setFormData(prev => ({ ...prev, proyecto: '', cliente: selectedClientId }));
+            }
+        } else {
+            // No client selected -> Show all projects? Or none? 
+            // Creating a claim usually implies a client context. 
+            // Let's show all projects if no client is restricted.
+            setFilteredProjects(allProjects);
+        }
+    };
+
+    // Handle Project Change -> Auto select Client
+    const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedProjectId = e.target.value;
+        setFormData(prev => ({ ...prev, proyecto: selectedProjectId }));
+
+        if (selectedProjectId) {
+            const project = allProjects.find(p => p._id === selectedProjectId);
+            if (project && project.clienteId) {
+                const clientId = typeof project.clienteId === 'object' ? project.clienteId._id : project.clienteId;
+
+                // Only update client if it's different (avoids loops, though setState checks values)
+                if (formData.cliente !== clientId) {
+                    setFormData(prev => ({ ...prev, cliente: clientId, proyecto: selectedProjectId }));
+                    // Also re-filter projects to match this client context?
+                    // Yes, if I pick a project, I implicitly pick the client, so the scope narrows.
+                    const clientProjects = allProjects.filter(p =>
+                        p.clienteId && (p.clienteId === clientId || p.clienteId._id === clientId)
+                    );
+                    setFilteredProjects(clientProjects);
+                }
+            }
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -152,9 +218,10 @@ export const CreateClaim = () => {
                                 <select
                                     name="cliente"
                                     value={formData.cliente}
-                                    onChange={handleChange}
+                                    onChange={handleClientChange}
                                     className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
                                 >
+                                    <option value="">Seleccionar Cliente</option>
                                     {clients.map(client => (
                                         <option key={client._id} value={client._id}>
                                             {client.nombre} {client.apellido}
@@ -168,10 +235,11 @@ export const CreateClaim = () => {
                                 <select
                                     name="proyecto"
                                     value={formData.proyecto}
-                                    onChange={handleChange}
+                                    onChange={handleProjectChange}
                                     className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
                                 >
-                                    {projects.map(project => (
+                                    <option value="">Seleccionar Proyecto</option>
+                                    {filteredProjects.map(project => (
                                         <option key={project._id} value={project._id}>
                                             {project.nombre}
                                         </option>
