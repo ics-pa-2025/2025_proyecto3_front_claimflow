@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Cookies from 'js-cookie';
 import { getUsers } from '../../services/users.service';
@@ -15,6 +17,7 @@ interface User {
 }
 
 export const UsersList = () => {
+    const navigate = useNavigate();
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -46,9 +49,15 @@ export const UsersList = () => {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold text-secondary-900">Usuarios</h1>
-                <p className="text-secondary-500">Gestiona los usuarios del sistema</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-secondary-900">Usuarios</h1>
+                    <p className="text-secondary-500">Gestiona los usuarios del sistema</p>
+                </div>
+                <Button onClick={() => navigate('/users/new')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nuevo Usuario
+                </Button>
             </div>
 
             <Card>

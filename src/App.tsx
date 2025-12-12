@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { ClaimsList } from './pages/claims/ClaimsList';
 import { CreateClaim } from './pages/claims/CreateClaim';
 import { UsersList } from './pages/users/UsersList';
+import { CreateUser } from './pages/users/CreateUser';
 import { ClientsList } from './pages/clients/ClientsList';
 import { CreateClient } from './pages/clients/CreateClient';
 import { EditClient } from './pages/clients/EditClient';
@@ -47,6 +48,7 @@ function App() {
             <Route path="claims/:id/edit" element={<CreateClaim />} />
             <Route path="claims/:id" element={<ClaimDetail />} />
             <Route path="users" element={<UsersList />} />
+            <Route path="users/new" element={<CreateUser />} />
             <Route path="clients" element={<ClientsList />} />
             <Route path="clients/new" element={<CreateClient />} />
             <Route path="clients/edit/:id" element={<EditClient />} />
