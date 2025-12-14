@@ -16,6 +16,8 @@ import { CreateProject } from './pages/projects/CreateProject';
 import { EditProject } from './pages/projects/EditProject';
 import { ClaimDetail } from './pages/claims/ClaimDetail';
 import { Settings } from './pages/Settings';
+import { EstadoReclamoList } from './pages/claim-statuses/EstadoReclamoList';
+import { CreateEditEstadoReclamo } from './pages/claim-statuses/CreateEditEstadoReclamo';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -56,6 +58,11 @@ function App() {
             <Route path="projects/new" element={<CreateProject />} />
             <Route path="projects/edit/:id" element={<EditProject />} />
             <Route path="settings" element={<Settings />} />
+
+            <Route path="claim-statuses" element={<EstadoReclamoList />} />
+            <Route path="claim-statuses/new" element={<CreateEditEstadoReclamo />} />
+            <Route path="claim-statuses/:id/edit" element={<CreateEditEstadoReclamo />} />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

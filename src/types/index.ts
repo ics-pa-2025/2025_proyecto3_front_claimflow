@@ -27,7 +27,15 @@ export interface Project {
 
 export type ClaimPriority = 'Alta' | 'Media' | 'Baja';
 export type ClaimCriticality = 'Alta' | 'Media' | 'Baja';
-export type ClaimStatus = 'Abierto' | 'En Proceso' | 'Cerrado';
+export interface EstadoReclamo {
+    _id: string;
+    nombre: string;
+    descripcion: string;
+    color: string;
+    activo: boolean;
+}
+
+export type ClaimStatus = string | EstadoReclamo;
 export type ClaimArea = 'Ventas' | 'Soporte' | 'Facturacion';
 
 export interface Claim {

@@ -20,6 +20,7 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
         { icon: Users, label: 'Usuarios', to: '/users' },
         { icon: Building2, label: 'Clientes', to: '/clients' },
         { icon: Briefcase, label: 'Proyectos', to: '/projects' },
+        { icon: LayoutDashboard, label: 'Estados Reclamo', to: '/claim-statuses' },
         { icon: Settings, label: 'Configuración', to: '/settings' },
     ];
 
