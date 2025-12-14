@@ -15,6 +15,23 @@ export const getClients = async (token: string) => {
     return response.json();
 };
 
+export const updateClient = async (id: string, clientData: any, token: string) => {
+    const response = await fetch(`${CLIENTS_API}/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(clientData)
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al actualizar cliente');
+    }
+
+    return response.json();
+};
+
 export const deleteClient = async (id: string, token: string) => {
     const response = await fetch(`${CLIENTS_API}/${id}`, {
         method: 'DELETE',

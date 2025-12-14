@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import Cookies from 'js-cookie';
 import { getRoles } from '../../services/roles.service';
 import { createUser } from '../../services/users.service';
+import { getClients, updateClient } from '../../services/clients.service';
 import { Role } from '../../types';
 
 export const CreateUser = () => {
@@ -14,6 +15,8 @@ export const CreateUser = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingRoles, setIsLoadingRoles] = useState(true);
     const [roles, setRoles] = useState<Role[]>([]);
+    const [clients, setClients] = useState<any[]>([]);
+    const [selectedClientId, setSelectedClientId] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         fullname: '',
@@ -26,21 +29,27 @@ export const CreateUser = () => {
     });
 
     useEffect(() => {
-        const fetchRoles = async () => {
+        const loadData = async () => {
             try {
                 const token = Cookies.get('access_token');
                 if (!token) return;
-                const data = await getRoles(token);
-                setRoles(data);
+
+                const [rolesData, clientsData] = await Promise.all([
+                    getRoles(token),
+                    getClients(token)
+                ]);
+
+                setRoles(rolesData);
+                setClients(clientsData);
             } catch (err: any) {
-                console.error('Error fetching roles:', err);
-                // Continue without roles if fail
+                console.error('Error fetching data:', err);
+                // Continue without roles/clients if fail
             } finally {
                 setIsLoadingRoles(false);
             }
         };
 
-        fetchRoles();
+        loadData();
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,13 +61,21 @@ export const CreateUser = () => {
     };
 
     const handleRoleChange = (roleId: string) => {
+        const role = roles.find(r => r.id === roleId);
+        // Assuming role name for client is 'client' or contains 'client' (case insensitive)
+        const isClientRole = role?.name.toLowerCase().includes('client') || role?.name.toLowerCase().includes('cliente');
+
         setFormData(prev => {
             const currentRoles = prev.roleIds;
+            let newRoles;
             if (currentRoles.includes(roleId)) {
-                return { ...prev, roleIds: currentRoles.filter(id => id !== roleId) };
+                newRoles = currentRoles.filter(id => id !== roleId);
+                // If removing client role, clear selection? Maybe optional depending on UX
+                // keeping it simple: if removing client role, the UI for client selection will hide
             } else {
-                return { ...prev, roleIds: [...currentRoles, roleId] };
+                newRoles = [...currentRoles, roleId];
             }
+            return { ...prev, roleIds: newRoles };
         });
     };
 
@@ -71,7 +88,26 @@ export const CreateUser = () => {
             const token = Cookies.get('access_token');
             if (!token) throw new Error("No hay sesión activa");
 
-            await createUser(formData, token);
+            const newUser = await createUser(formData, token);
+
+            // Check if client role is assigned and a client is selected
+            const hasClientRole = newUser.roles?.some((r: any) =>
+                r.name.toLowerCase().includes('client') || r.name.toLowerCase().includes('cliente')
+            ) || formData.roleIds.some(id => {
+                const r = roles.find(role => role.id === id);
+                return r?.name.toLowerCase().includes('client') || r?.name.toLowerCase().includes('cliente');
+            });
+
+            if (hasClientRole && selectedClientId) {
+                try {
+                    await updateClient(selectedClientId, { usuarioId: newUser.id }, token);
+                } catch (clientErr) {
+                    console.error('Error linking client:', clientErr);
+                    // Non-blocking error, user created but not linked
+                    alert('Usuario creado pero hubo un error al vincular el cliente.');
+                }
+            }
+
             navigate('/users');
         } catch (err: any) {
             setError(err.message);
@@ -197,6 +233,31 @@ export const CreateUser = () => {
                                 )}
                             </div>
                         </div>
+
+                        {/* Client Selection for Client Role */}
+                        {formData.roleIds.some(id => {
+                            const r = roles.find(role => role.id === id);
+                            return r?.name.toLowerCase().includes('client') || r?.name.toLowerCase().includes('cliente');
+                        }) && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-secondary-700">Asociar Cliente Existente</label>
+                                    <select
+                                        value={selectedClientId}
+                                        onChange={(e) => setSelectedClientId(e.target.value)}
+                                        className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                    >
+                                        <option value="">Seleccionar Cliente</option>
+                                        {clients.map(client => (
+                                            <option key={client._id} value={client._id}>
+                                                {client.nombre} {client.apellido} - {client.dni}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs text-secondary-500">
+                                        Si selecciona un cliente, este usuario quedará vinculado a él.
+                                    </p>
+                                </div>
+                            )}
 
                         <div className="flex justify-end gap-3">
                             <Button type="button" variant="outline" onClick={() => navigate('/users')}>
