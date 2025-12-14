@@ -9,6 +9,7 @@ import { getProjects } from '../../services/projects.service';
 import { getClients } from '../../services/clients.service';
 import Cookies from 'js-cookie';
 import { getEstadosReclamo } from '../../services/estadoReclamo.service';
+import { getAreas } from '../../services/areas.service';
 
 export const CreateClaim = () => {
     const navigate = useNavigate();
@@ -22,6 +23,7 @@ export const CreateClaim = () => {
     const [filteredProjects, setFilteredProjects] = useState<any[]>([]); // Store filtered projects
     const [clients, setClients] = useState<any[]>([]);
     const [estados, setEstados] = useState<any[]>([]);
+    const [areas, setAreas] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
         tipo: 'Error de Software',
@@ -31,7 +33,7 @@ export const CreateClaim = () => {
         proyecto: '',
         cliente: '',
         estado: '',
-        area: 'Sistemas',
+        area: '',
         file: null as File | null
     });
 
@@ -41,22 +43,25 @@ export const CreateClaim = () => {
                 const token = Cookies.get('access_token');
                 if (!token) return;
 
-                const [projectsData, clientsData, estadosData] = await Promise.all([
+                const [projectsData, clientsData, estadosData, areasData] = await Promise.all([
                     getProjects(token),
                     getClients(token),
-                    getEstadosReclamo(token)
+                    getEstadosReclamo(token),
+                    getAreas(token)
                 ]);
 
                 setAllProjects(projectsData);
                 setFilteredProjects(projectsData); // Initially show all
                 setClients(clientsData);
                 setEstados(estadosData);
+                setAreas(areasData);
 
                 if (isEditMode) {
                     const claim = await getClaimById(id, token);
                     const projectId = claim.proyecto?._id || claim.proyecto;
                     const clientId = claim.cliente?._id || claim.cliente;
                     const estadoId = claim.estado?._id || claim.estado || (typeof claim.estado === 'string' ? claim.estado : '');
+                    const areaId = claim.area?._id || claim.area || (typeof claim.area === 'string' ? claim.area : '');
 
                     setFormData({
                         tipo: claim.tipo,
@@ -66,7 +71,8 @@ export const CreateClaim = () => {
                         proyecto: projectId,
                         cliente: clientId,
                         estado: estadoId,
-                        area: claim.area,
+                        // @ts-ignore
+                        area: areaId,
                         file: null
                     });
                     // Filter projects based on the loaded (and set) client
@@ -321,12 +327,20 @@ export const CreateClaim = () => {
 
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-secondary-700">Área</label>
-                                <Input
+                                <select
                                     name="area"
                                     value={formData.area}
                                     onChange={handleChange}
-                                    placeholder="Área responsable"
-                                />
+                                    className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                    required
+                                >
+                                    <option value="">Seleccionar Área</option>
+                                    {areas.map(area => (
+                                        <option key={area._id} value={area._id}>
+                                            {area.nombre}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 

@@ -18,6 +18,9 @@ import { ClaimDetail } from './pages/claims/ClaimDetail';
 import { Settings } from './pages/Settings';
 import { EstadoReclamoList } from './pages/claim-statuses/EstadoReclamoList';
 import { CreateEditEstadoReclamo } from './pages/claim-statuses/CreateEditEstadoReclamo';
+import { AreasList } from './pages/areas/AreasList';
+import { CreateEditArea } from './pages/areas/CreateEditArea';
+
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -58,6 +61,9 @@ function App() {
             <Route path="projects/new" element={<CreateProject />} />
             <Route path="projects/edit/:id" element={<EditProject />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="areas" element={<AreasList />} />
+            <Route path="areas/new" element={<CreateEditArea />} />
+            <Route path="areas/:id/edit" element={<CreateEditArea />} />
 
             <Route path="claim-statuses" element={<EstadoReclamoList />} />
             <Route path="claim-statuses/new" element={<CreateEditEstadoReclamo />} />

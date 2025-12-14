@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, FileText, Settings, LogOut, Building2 } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronLeft, ChevronRight, Menu, FolderKanban, ListChecks, Building2, Briefcase } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import logo from '../../assets/logo.png';
 
@@ -21,6 +21,7 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
         { icon: Building2, label: 'Clientes', to: '/clients' },
         { icon: Briefcase, label: 'Proyectos', to: '/projects' },
         { icon: LayoutDashboard, label: 'Estados Reclamo', to: '/claim-statuses' },
+        { icon: Building2, label: 'Áreas', to: '/areas' },
         { icon: Settings, label: 'Configuración', to: '/settings' },
     ];
 
