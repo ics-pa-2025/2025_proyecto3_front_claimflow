@@ -8,6 +8,7 @@ import { createClaim, getClaimById, updateClaim } from '../../services/claims.se
 import { getProjects } from '../../services/projects.service';
 import { getClients } from '../../services/clients.service';
 import Cookies from 'js-cookie';
+import { getEstadosReclamo } from '../../services/estadoReclamo.service';
 
 export const CreateClaim = () => {
     const navigate = useNavigate();
@@ -20,6 +21,7 @@ export const CreateClaim = () => {
     const [allProjects, setAllProjects] = useState<any[]>([]); // Store all projects
     const [filteredProjects, setFilteredProjects] = useState<any[]>([]); // Store filtered projects
     const [clients, setClients] = useState<any[]>([]);
+    const [estados, setEstados] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
         tipo: 'Error de Software',
@@ -28,6 +30,7 @@ export const CreateClaim = () => {
         descripcion: '',
         proyecto: '',
         cliente: '',
+        estado: '',
         area: 'Sistemas',
         file: null as File | null
     });
@@ -38,19 +41,22 @@ export const CreateClaim = () => {
                 const token = Cookies.get('access_token');
                 if (!token) return;
 
-                const [projectsData, clientsData] = await Promise.all([
+                const [projectsData, clientsData, estadosData] = await Promise.all([
                     getProjects(token),
-                    getClients(token)
+                    getClients(token),
+                    getEstadosReclamo(token)
                 ]);
 
                 setAllProjects(projectsData);
                 setFilteredProjects(projectsData); // Initially show all
                 setClients(clientsData);
+                setEstados(estadosData);
 
                 if (isEditMode) {
                     const claim = await getClaimById(id, token);
                     const projectId = claim.proyecto?._id || claim.proyecto;
                     const clientId = claim.cliente?._id || claim.cliente;
+                    const estadoId = claim.estado?._id || claim.estado || (typeof claim.estado === 'string' ? claim.estado : '');
 
                     setFormData({
                         tipo: claim.tipo,
@@ -59,6 +65,7 @@ export const CreateClaim = () => {
                         descripcion: claim.descripcion,
                         proyecto: projectId,
                         cliente: clientId,
+                        estado: estadoId,
                         area: claim.area,
                         file: null
                     });
@@ -71,10 +78,12 @@ export const CreateClaim = () => {
                     }
 
                 } else {
-                    // Set default values only in create mode
-                    // We don't auto-set defaults anymore to avoid confusion, or we do it carefully.
-                    // Let's leave them empty to force selection, or select first if available.
-                    // But with inter-dependency, empty is safer until user picks one.
+                    // Pre-select 'Pendiente' if acceptable, otherwise leave empty or let backend handle it.
+                    // If we want to show it in the UI, we should probably find it.
+                    const pendiente = estadosData.find((e: any) => e.nombre === 'Pendiente');
+                    if (pendiente) {
+                        setFormData(prev => ({ ...prev, estado: pendiente._id }));
+                    }
                 }
 
             } catch (err: any) {
@@ -167,6 +176,9 @@ export const CreateClaim = () => {
             data.append('area', formData.area);
             data.append('proyecto', formData.proyecto);
             data.append('cliente', formData.cliente);
+            if (formData.estado) {
+                data.append('estado', formData.estado);
+            }
 
             if (formData.file) {
                 data.append('file', formData.file);
@@ -225,6 +237,23 @@ export const CreateClaim = () => {
                                     {clients.map(client => (
                                         <option key={client._id} value={client._id}>
                                             {client.nombre} {client.apellido}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-secondary-700">Estado</label>
+                                <select
+                                    name="estado"
+                                    value={formData.estado}
+                                    onChange={handleChange}
+                                    className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                >
+                                    <option value="">Seleccionar Estado</option>
+                                    {estados.map(estado => (
+                                        <option key={estado._id} value={estado._id} disabled={!estado.activo}>
+                                            {estado.nombre}
                                         </option>
                                     ))}
                                 </select>
