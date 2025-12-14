@@ -1,4 +1,5 @@
-export const CLAIMS_API = 'http://localhost:3000/reclamo';
+import { environment } from '../environment/environments';
+export const CLAIMS_API = `${environment.apiUrl}/reclamo`;
 
 export const createClaim = async (data: FormData, token: string) => {
     const response = await fetch(CLAIMS_API, {

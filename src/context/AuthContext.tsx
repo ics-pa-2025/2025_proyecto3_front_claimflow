@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { User } from '../types';
+import { environment } from '../environment/environments';
 
 interface AuthContextType {
     user: User | null;
@@ -36,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch('http://localhost:3001/auth/login', {
+            const response = await fetch(`${environment.authUrl}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const token = Cookies.get('access_token');
             if (token) {
-                await fetch('http://localhost:3001/auth/logout', {
+                await fetch(`${environment.authUrl}/auth/logout`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`

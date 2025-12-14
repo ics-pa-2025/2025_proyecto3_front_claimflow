@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3001/user';
+import { environment } from '../environment/environments';
+const API_URL = `${environment.authUrl}/user`;
 
 export const getUsers = async (token: string) => {
     const response = await fetch(API_URL, {
