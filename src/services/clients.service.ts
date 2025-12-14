@@ -1,4 +1,5 @@
-export const CLIENTS_API = 'http://localhost:3000/cliente';
+import { environment } from '../environment/environments';
+export const CLIENTS_API = `${environment.apiUrl}/cliente`;
 
 export const getClients = async (token: string) => {
     const response = await fetch(CLIENTS_API, {
