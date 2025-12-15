@@ -8,6 +8,23 @@ import Cookies from 'js-cookie';
 import { getRoles } from '../../services/roles.service';
 import { createUser } from '../../services/users.service';
 import { getClients, updateClient } from '../../services/clients.service';
+
+// Nueva función para crear cliente
+const createClient = async (clientData: any, token: string) => {
+    const response = await fetch('http://localhost:3000/cliente', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(clientData)
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear el cliente');
+    }
+    return response.json();
+};
 import { Role } from '../../types';
 
 export const CreateUser = () => {
@@ -19,7 +36,8 @@ export const CreateUser = () => {
     const [selectedClientId, setSelectedClientId] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
-        fullname: '',
+        nombre: '',
+        apellido: '',
         email: '',
         password: '',
         dni: '',
@@ -88,23 +106,53 @@ export const CreateUser = () => {
             const token = Cookies.get('access_token');
             if (!token) throw new Error("No hay sesión activa");
 
-            const newUser = await createUser(formData, token);
+            // ¿El rol seleccionado es client?
+            const clientRoleId = roles.find(r => r.name.toLowerCase() === 'client' || r.name.toLowerCase() === 'cliente')?.id;
+            const isClientSelected = formData.roleIds.includes(clientRoleId || '');
 
-            // Check if client role is assigned and a client is selected
-            const hasClientRole = newUser.roles?.some((r: any) =>
-                r.name.toLowerCase().includes('client') || r.name.toLowerCase().includes('cliente')
-            ) || formData.roleIds.some(id => {
-                const r = roles.find(role => role.id === id);
-                return r?.name.toLowerCase().includes('client') || r?.name.toLowerCase().includes('cliente');
-            });
+            let createdClientId = '';
 
-            if (hasClientRole && selectedClientId) {
+            if (isClientSelected) {
+                // Validar campos de cliente (usamos los del usuario)
+                if (!formData.nombre || !formData.apellido || !formData.dni || !formData.email) {
+                    throw new Error('Complete todos los datos requeridos');
+                }
+                // Crear cliente
+                const clientPayload = {
+                    nombre: formData.nombre,
+                    apellido: formData.apellido,
+                    dni: formData.dni,
+                    email: formData.email,
+                    telefono: formData.phone
+                };
+                const createdClient = await createClient(clientPayload, token);
+                createdClientId = createdClient._id || createdClient.id;
+            }
+
+            // Crear usuario
+            const userPayload: any = {
+                fullname: formData.nombre + ' ' + formData.apellido,
+                email: formData.email,
+                password: formData.password,
+                dni: formData.dni,
+                phone: formData.phone,
+                address: formData.address,
+                roleIds: formData.roleIds
+            };
+            // Si es client, asociar el id del cliente
+            if (isClientSelected && createdClientId) {
+                userPayload.clientId = createdClientId;
+            }
+
+            const newUser = await createUser(userPayload, token);
+
+            // Si es client, asociar usuario al cliente (opcional, si backend lo requiere)
+            if (isClientSelected && createdClientId) {
                 try {
-                    await updateClient(selectedClientId, { usuarioId: newUser.id }, token);
+                    await updateClient(createdClientId, { usuarioId: newUser.id }, token);
                 } catch (clientErr) {
                     console.error('Error linking client:', clientErr);
-                    // Non-blocking error, user created but not linked
-                    alert('Usuario creado pero hubo un error al vincular el cliente.');
+                    alert('Usuario y cliente creados, pero hubo un error al asociarlos.');
                 }
             }
 
@@ -144,11 +192,21 @@ export const CreateUser = () => {
                         <div className="grid gap-6 md:grid-cols-2">
                             <div className="space-y-2">
                                 <Input
-                                    id="fullname"
-                                    label="Nombre Completo"
-                                    placeholder="Ej: Juan Pérez"
+                                    id="nombre"
+                                    label="Nombre"
+                                    placeholder="Ej: Juan"
                                     required
-                                    value={formData.fullname}
+                                    value={formData.nombre}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Input
+                                    id="apellido"
+                                    label="Apellido"
+                                    placeholder="Ej: Pérez"
+                                    required
+                                    value={formData.apellido}
                                     onChange={handleChange}
                                 />
                             </div>
@@ -203,6 +261,7 @@ export const CreateUser = () => {
                             </div>
                         </div>
 
+
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-secondary-700">Areas (Roles)</label>
                             <div className="flex flex-wrap gap-4 p-4 border border-secondary-200 rounded-md bg-white">
@@ -235,30 +294,37 @@ export const CreateUser = () => {
                             </div>
                         </div>
 
-                        {/* Client Selection for Client Role */}
-                        {formData.roleIds.some(id => {
-                            const r = roles.find(role => role.id === id);
-                            return r?.name.toLowerCase().includes('client') || r?.name.toLowerCase().includes('cliente');
-                        }) && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-secondary-700">Asociar Cliente Existente</label>
-                                    <select
-                                        value={selectedClientId}
-                                        onChange={(e) => setSelectedClientId(e.target.value)}
-                                        className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
-                                    >
-                                        <option value="">Seleccionar Cliente</option>
-                                        {clients.map(client => (
-                                            <option key={client._id} value={client._id}>
-                                                {client.nombre} {client.apellido} - {client.dni}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <p className="text-xs text-secondary-500">
-                                        Si selecciona un cliente, este usuario quedará vinculado a él.
-                                    </p>
-                                </div>
-                            )}
+                        {/* Client Selection for Client Role (solo si NO es creación automática) */}
+                        {(() => {
+                            const clientRoleId = roles.find(r => r.name.toLowerCase() === 'client' || r.name.toLowerCase() === 'cliente')?.id;
+                            const isClientSelected = formData.roleIds.includes(clientRoleId || '');
+                            if (isClientSelected) return null;
+                            return (
+                                formData.roleIds.some(id => {
+                                    const r = roles.find(role => role.id === id);
+                                    return r?.name.toLowerCase().includes('client') || r?.name.toLowerCase().includes('cliente');
+                                }) && (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-secondary-700">Asociar Cliente Existente</label>
+                                        <select
+                                            value={selectedClientId}
+                                            onChange={(e) => setSelectedClientId(e.target.value)}
+                                            className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                        >
+                                            <option value="">Seleccionar Cliente</option>
+                                            {clients.map(client => (
+                                                <option key={client._id} value={client._id}>
+                                                    {client.nombre} {client.apellido} - {client.dni}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <p className="text-xs text-secondary-500">
+                                            Si selecciona un cliente, este usuario quedará vinculado a él.
+                                        </p>
+                                    </div>
+                                )
+                            );
+                        })()}
 
                         <div className="flex justify-end gap-3">
                             <Button type="button" variant="outline" onClick={() => navigate('/users')}>
