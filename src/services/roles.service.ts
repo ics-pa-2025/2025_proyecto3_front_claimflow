@@ -4,6 +4,7 @@ import { environment } from '../environment/environments';
 const API_URL = `${environment.authUrl}/roles`;
 
 export const getRoles = async (token: string): Promise<Role[]> => {
+    console.log('Fetching roles...');
     const response = await fetch(API_URL, {
         headers: {
             'Authorization': `Bearer ${token}`

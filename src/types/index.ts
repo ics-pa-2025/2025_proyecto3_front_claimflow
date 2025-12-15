@@ -1,4 +1,8 @@
-export type Role = 'Admin' | 'Ventas' | 'Soporte' | 'Facturacion' | 'User' | 'SuperAdmin';
+export interface Role {
+    id: string;
+    name: string;
+    description: string;
+}
 
 export interface User {
     id: string;

@@ -225,6 +225,7 @@ export const CreateUser = () => {
                                             <label
                                                 htmlFor={`role-${role.id}`}
                                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-secondary-700"
+                                                title={role.description}
                                             >
                                                 {role.name}
                                             </label>
