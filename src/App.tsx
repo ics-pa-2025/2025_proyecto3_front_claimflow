@@ -9,7 +9,6 @@ import { CreateClaim } from './pages/claims/CreateClaim';
 import { UsersList } from './pages/users/UsersList';
 import { CreateUser } from './pages/users/CreateUser';
 import { ClientsList } from './pages/clients/ClientsList';
-import { CreateClient } from './pages/clients/CreateClient';
 import { EditClient } from './pages/clients/EditClient';
 import { ProjectsList } from './pages/projects/ProjectsList';
 import { CreateProject } from './pages/projects/CreateProject';
@@ -55,7 +54,6 @@ function App() {
             <Route path="users" element={<UsersList />} />
             <Route path="users/new" element={<CreateUser />} />
             <Route path="clients" element={<ClientsList />} />
-            <Route path="clients/new" element={<CreateClient />} />
             <Route path="clients/edit/:id" element={<EditClient />} />
             <Route path="projects" element={<ProjectsList />} />
             <Route path="projects/new" element={<CreateProject />} />

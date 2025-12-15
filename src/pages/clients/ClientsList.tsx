@@ -13,6 +13,7 @@ export const ClientsList = () => {
     const [clients, setClients] = useState<Client[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showToast, setShowToast] = useState(false);
 
     const handleDelete = async (id: string) => {
         if (window.confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
@@ -73,13 +74,27 @@ export const ClientsList = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 relative">
+            {/* Toast informativo solo si showToast es true */}
+            {showToast && (
+                <div className="fixed top-6 right-6 z-50">
+                    <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-2 rounded shadow-md flex items-center gap-2 animate-fade-in">
+                        <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+                        <span>Para registrar nuevos clientes visita el panel de usuarios.</span>
+                        <button onClick={() => setShowToast(false)} className="ml-2 text-blue-400 hover:text-blue-600 focus:outline-none">&times;</button>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-secondary-900">Clientes</h1>
                     <p className="text-secondary-500">Gestiona la cartera de clientes y sus proyectos</p>
                 </div>
-
+                <Button onClick={() => setShowToast(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nuevo Cliente
+                </Button>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
