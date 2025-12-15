@@ -79,10 +79,7 @@ export const ClientsList = () => {
                     <h1 className="text-3xl font-bold text-secondary-900">Clientes</h1>
                     <p className="text-secondary-500">Gestiona la cartera de clientes y sus proyectos</p>
                 </div>
-                <Button onClick={() => navigate('/clients/new')}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nuevo Cliente
-                </Button>
+
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
