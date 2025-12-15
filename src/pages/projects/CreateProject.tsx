@@ -66,7 +66,8 @@ export const CreateProject = () => {
 
         try {
             const token = Cookies.get('access_token');
-            const response = await fetch('http://localhost:3000/proyecto', {
+            const { environment } = await import('../../environment/environments');
+            const response = await fetch(`${environment.apiUrl}/proyecto`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

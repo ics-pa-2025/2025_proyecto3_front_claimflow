@@ -28,9 +28,10 @@ export const EditProject = () => {
                 if (!token) return;
 
                 // Fetch Clients and Project in parallel
+                const { environment } = await import('../../environment/environments');
                 const [clientsData, projectResponse] = await Promise.all([
                     getClients(token),
-                    fetch(`http://localhost:3000/proyecto/${id}`, {
+                    fetch(`${environment.apiUrl}/proyecto/${id}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     })
                 ]);
@@ -91,7 +92,8 @@ export const EditProject = () => {
 
         try {
             const token = Cookies.get('access_token');
-            const response = await fetch(`http://localhost:3000/proyecto/${id}`, {
+            const { environment } = await import('../../environment/environments');
+            const response = await fetch(`${environment.apiUrl}/proyecto/${id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

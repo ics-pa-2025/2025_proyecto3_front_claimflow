@@ -24,7 +24,8 @@ export const EditClient = () => {
         const fetchClient = async () => {
             try {
                 const token = Cookies.get('access_token');
-                const response = await fetch(`http://localhost:3000/cliente/${id}`, {
+                const { environment } = await import('../../environment/environments');
+                const response = await fetch(`${environment.apiUrl}/cliente/${id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -69,7 +70,8 @@ export const EditClient = () => {
 
         try {
             const token = Cookies.get('access_token');
-            const response = await fetch(`http://localhost:3000/cliente/${id}`, {
+            const { environment } = await import('../../environment/environments');
+            const response = await fetch(`${environment.apiUrl}/cliente/${id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

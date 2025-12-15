@@ -10,8 +10,9 @@ import { createUser } from '../../services/users.service';
 import { getClients, updateClient } from '../../services/clients.service';
 
 // Nueva función para crear cliente
+import { environment } from '../../environment/environments';
 const createClient = async (clientData: any, token: string) => {
-    const response = await fetch('http://localhost:3000/cliente', {
+    const response = await fetch(`${environment.apiUrl}/cliente`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
+import { environment } from '../environment/environments';
 
-const API_URL = 'http://localhost:3000/area';
+const API_URL = `${environment.apiUrl}/area`;
 
 export const getAreas = async (token?: string) => {
     const response = await fetch(API_URL, {

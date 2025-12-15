@@ -1,4 +1,6 @@
-export const ESTADO_RECLAMO_API = 'http://localhost:3000/estado-reclamo';
+import { environment } from '../environment/environments';
+
+export const ESTADO_RECLAMO_API = `${environment.apiUrl}/estado-reclamo`;
 
 export const getEstadosReclamo = async (token: string) => {
     const response = await fetch(ESTADO_RECLAMO_API, {

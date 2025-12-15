@@ -25,7 +25,8 @@ export const ProjectsList = () => {
         const fetchProjects = async () => {
             try {
                 const token = Cookies.get('access_token');
-                const response = await fetch('http://localhost:3000/proyecto', {
+                const { environment } = await import('../../environment/environments');
+                const response = await fetch(`${environment.apiUrl}/proyecto`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
