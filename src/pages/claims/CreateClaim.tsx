@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { createClaim, getClaimById, updateClaim } from '../../services/claims.service';
 import { getProjects } from '../../services/projects.service';
 import { getClients } from '../../services/clients.service';
+import { CLAIM_TYPE_OPTIONS } from '../../types';
 import Cookies from 'js-cookie';
 import { getEstadosReclamo } from '../../services/estadoReclamo.service';
 import { getAreas } from '../../services/areas.service';
@@ -289,11 +290,12 @@ export const CreateClaim = () => {
                                     value={formData.tipo}
                                     onChange={handleChange}
                                     className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                    required
                                 >
-                                    <option>Error de Software</option>
-                                    <option>Facturación</option>
-                                    <option>Solicitud de Servicio</option>
-                                    <option>Otro</option>
+                                    <option value="">Seleccione un tipo</option>
+                                    {CLAIM_TYPE_OPTIONS.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
                                 </select>
                             </div>
 

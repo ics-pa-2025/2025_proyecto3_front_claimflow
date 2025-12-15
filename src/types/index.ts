@@ -1,3 +1,11 @@
+// Tipos de reclamo disponibles en el sistema
+export const CLAIM_TYPE_OPTIONS = [
+    { value: 'Error de Software', label: 'Error de Software' },
+    { value: 'Consulta', label: 'Consulta' },
+    { value: 'Mejora', label: 'Mejora' },
+    { value: 'Soporte Técnico', label: 'Soporte Técnico' },
+    { value: 'Otro', label: 'Otro' },
+];
 export interface Role {
     id: string;
     name: string;

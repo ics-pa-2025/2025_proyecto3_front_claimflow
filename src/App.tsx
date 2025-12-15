@@ -14,6 +14,8 @@ import { ProjectsList } from './pages/projects/ProjectsList';
 import { CreateProject } from './pages/projects/CreateProject';
 import { EditProject } from './pages/projects/EditProject';
 import { ClaimDetail } from './pages/claims/ClaimDetail';
+import { SolicitudReclamoList } from './pages/solicitud-reclamo/SolicitudReclamoList';
+import { CreateSolicitudReclamo } from './pages/solicitud-reclamo/CreateSolicitudReclamo';
 import { Settings } from './pages/Settings';
 import { EstadoReclamoList } from './pages/claim-statuses/EstadoReclamoList';
 import { CreateEditEstadoReclamo } from './pages/claim-statuses/CreateEditEstadoReclamo';
@@ -51,6 +53,9 @@ function App() {
             <Route path="claims/new" element={<CreateClaim />} />
             <Route path="claims/:id/edit" element={<CreateClaim />} />
             <Route path="claims/:id" element={<ClaimDetail />} />
+             {/* Solicitud Reclamo */}
+             <Route path="solicitud-reclamo" element={<SolicitudReclamoList />} />
+             <Route path="solicitud-reclamo/new" element={<CreateSolicitudReclamo />} />
             <Route path="users" element={<UsersList />} />
             <Route path="users/new" element={<CreateUser />} />
             <Route path="clients" element={<ClientsList />} />
