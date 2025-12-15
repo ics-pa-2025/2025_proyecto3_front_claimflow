@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
-import { User } from '../types';
+import { User, Role } from '../types';
 import { environment } from '../environment/environments';
 
 interface AuthContextType {
@@ -22,13 +22,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         const checkAuth = async () => {
             const token = Cookies.get('access_token');
-            const storedUser = localStorage.getItem('user');
-
-            if (token && storedUser) {
-                // Ideally validate token with backend here
-                setUser(JSON.parse(storedUser));
+            if (!token) {
+                setIsLoading(false);
+                return;
             }
-            setIsLoading(false);
+            try {
+                // Llama a /user/me para obtener el usuario y sus roles
+                const res = await fetch(`${environment.authUrl}/user/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('No autenticado');
+                const apiUser = await res.json();
+                // Toma el primer rol como principal (puedes ajustar si hay lógica de múltiples roles)
+                const mainRole: Role = apiUser.roles && apiUser.roles.length > 0 ? apiUser.roles[0] : { id: '', name: 'user', description: '' };
+                const mappedUser: User = {
+                    id: apiUser.id,
+                    name: apiUser.fullname,
+                    email: apiUser.email,
+                    role: mainRole,
+                    avatar: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(apiUser.fullname) + '&background=random',
+                };
+                setUser(mappedUser);
+                localStorage.setItem('user', JSON.stringify(mappedUser));
+            } catch (err) {
+                setUser(null);
+                localStorage.removeItem('user');
+            } finally {
+                setIsLoading(false);
+            }
         };
         checkAuth();
     }, []);
@@ -51,20 +72,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             const data = await response.json();
-            const { accessToken, user: apiUser } = data;
+            const { accessToken } = data;
+            Cookies.set('access_token', accessToken, { expires: 1 }); // 1 day
 
-            // Map API user to Frontend User type
+            // Ahora obtenemos el usuario real con roles
+            const res = await fetch(`${environment.authUrl}/user/me`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (!res.ok) throw new Error('No autenticado');
+            const apiUser = await res.json();
+            const mainRole: Role = apiUser.roles && apiUser.roles.length > 0 ? apiUser.roles[0] : { id: '', name: 'user', description: '' };
             const mappedUser: User = {
                 id: apiUser.id,
                 name: apiUser.fullname,
                 email: apiUser.email,
-                role: 'User', // Default role as it's not in the login response yet
-                avatar: 'https://ui-avatars.com/api/?name=' + apiUser.fullname + '&background=random'
+                role: mainRole,
+                avatar: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(apiUser.fullname) + '&background=random',
             };
-
-            Cookies.set('access_token', accessToken, { expires: 1 }); // 1 day
-            localStorage.setItem('user', JSON.stringify(mappedUser));
             setUser(mappedUser);
+            localStorage.setItem('user', JSON.stringify(mappedUser));
         } catch (err: any) {
             setError(err.message);
             throw err;

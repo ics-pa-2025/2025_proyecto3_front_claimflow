@@ -13,8 +13,11 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
-    const { logout } = useAuth();
-    const navItems = [
+
+    const { logout, user } = useAuth();
+
+    // Define nav items for each role
+    const adminNavItems = [
         { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
         { icon: FileText, label: 'Reclamos', to: '/claims' },
         { icon: Users, label: 'Usuarios', to: '/users' },
@@ -24,6 +27,18 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
         { icon: Building2, label: 'Áreas', to: '/areas' },
         { icon: Settings, label: 'Configuración', to: '/settings' },
     ];
+
+    // For client: only Dashboard and Solicitud Reclamo (to be created)
+    const clientNavItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
+        { icon: FileText, label: 'Solicitud Reclamo', to: '/solicitud-reclamo' },
+    ];
+
+    // Determine which nav items to show
+    let navItems = adminNavItems;
+    if (user && user.role && user.role.name === 'client') {
+        navItems = clientNavItems;
+    }
 
     return (
         <aside
