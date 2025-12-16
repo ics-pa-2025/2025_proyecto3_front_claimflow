@@ -9,7 +9,6 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { getProjectsByClient } from '../../services/projects.service';
 import { getClients } from '../../services/clients.service';
-import { getAreas } from '../../services/areas.service';
 import { environment } from '../../environment/environments';
 import { CLAIM_TYPE_OPTIONS } from '../../types';
 
@@ -20,12 +19,10 @@ export const CreateSolicitudReclamo = () => {
     const [error, setError] = useState<string | null>(null);
     const [projects, setProjects] = useState<any[]>([]);
     // const [clients, setClients] = useState<any[]>([]);
-    const [areas, setAreas] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         tipo: '',
         descripcion: '',
         evidencia: [],
-        area: '',
         proyecto: '',
         files: [] as File[],
     });
@@ -47,13 +44,9 @@ export const CreateSolicitudReclamo = () => {
                 const client = clientsData.find((c: any) => c.email === user.email);
                 if (!client) throw new Error('No se encontró el cliente para este usuario');
                 setClienteId(client._id);
-                // Cargar solo los proyectos del cliente logueado y las áreas
-                const [projectsData, areasData] = await Promise.all([
-                    getProjectsByClient(client._id, token),
-                    getAreas(token)
-                ]);
+                // Cargar solo los proyectos del cliente logueado
+                const projectsData = await getProjectsByClient(client._id, token);
                 setProjects(projectsData);
-                setAreas(areasData);
             } catch (err: any) {
                 setError('Error al cargar datos: ' + err.message);
             } finally {
@@ -85,7 +78,7 @@ export const CreateSolicitudReclamo = () => {
             const data = new FormData();
             data.append('tipo', formData.tipo);
             data.append('descripcion', formData.descripcion);
-            data.append('area', formData.area);
+            // `area` no debe ser asignada por el solicitante; el sistema la determinará posteriormente
             data.append('cliente', clienteId);
             data.append('proyecto', formData.proyecto);
             formData.files.forEach((file, idx) => {
@@ -136,15 +129,7 @@ export const CreateSolicitudReclamo = () => {
                                     ))}
                                 </Select>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-secondary-700">Área</label>
-                                <Select name="area" value={formData.area} onChange={handleChange} required>
-                                    <option value="">Seleccione un área</option>
-                                    {areas.map((area: any) => (
-                                        <option key={area._id} value={area._id}>{area.nombre}</option>
-                                    ))}
-                                </Select>
-                            </div>
+                            
                             <div>
                                 <label className="block text-sm font-medium text-secondary-700">Proyecto</label>
                                 <Select name="proyecto" value={formData.proyecto} onChange={handleChange} required>
@@ -163,7 +148,7 @@ export const CreateSolicitudReclamo = () => {
                             <label className="block text-sm font-medium text-secondary-700">Evidencia (puede adjuntar archivos)</label>
                             <Input type="file" name="evidencia" multiple onChange={handleFileChange} />
                         </div>
-                        {error && <div className="text-red-600 text-sm">{error}</div>}
+                        {error && <div className="text-[var(--accent)] text-sm dark:text-[var(--accent)]">{error}</div>}
                         <div className="flex justify-end">
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Crear Solicitud'}

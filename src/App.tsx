@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Layout } from './components/layout/Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -38,51 +39,74 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const RoleProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user || (user.role && !allowedRoles.includes(user.role.name))) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+};
+
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<Dashboard />} />
-            <Route path="claims" element={<ClaimsList />} />
-            <Route path="claims/new" element={<CreateClaim />} />
-            <Route path="claims/:id/edit" element={<CreateClaim />} />
-            <Route path="claims/:id" element={<ClaimDetail />} />
-            {/* Solicitud Reclamo */}
-            <Route path="solicitud-reclamo" element={<SolicitudReclamoList />} />
-            <Route path="solicitud-reclamo/new" element={<CreateSolicitudReclamo />} />
-            <Route path="users" element={<UsersList />} />
-            <Route path="users/new" element={<CreateUser />} />
-            <Route path="clients" element={<ClientsList />} />
-            <Route path="clients/edit/:id" element={<EditClient />} />
-            <Route path="projects" element={<ProjectsList />} />
-            <Route path="projects/new" element={<CreateProject />} />
-            <Route path="projects/edit/:id" element={<EditProject />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="areas" element={<AreasList />} />
-            <Route path="areas/new" element={<CreateEditArea />} />
-            <Route path="areas/:id/edit" element={<CreateEditArea />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="claims" element={<ClaimsList />} />
+              <Route path="claims/new" element={<CreateClaim />} />
+              <Route path="claims/:id/edit" element={<CreateClaim />} />
+              <Route path="claims/:id" element={<ClaimDetail />} />
+              {/* Solicitud Reclamo */}
+              <Route path="solicitud-reclamo" element={<SolicitudReclamoList />} />
+              <Route path="solicitud-reclamo/new" element={<CreateSolicitudReclamo />} />
+              <Route path="users" element={<UsersList />} />
+              <Route path="users/new" element={<CreateUser />} />
+              <Route path="clients" element={<ClientsList />} />
+              <Route path="clients/edit/:id" element={<EditClient />} />
+              <Route path="projects" element={<ProjectsList />} />
+              <Route path="projects/new" element={<CreateProject />} />
+              <Route path="projects/edit/:id" element={<EditProject />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="areas" element={<AreasList />} />
+              <Route path="areas/new" element={<CreateEditArea />} />
+              <Route path="areas/:id/edit" element={<CreateEditArea />} />
 
-            {/* Chat Routes */}
-            <Route path="chat" element={<ChatList />} />
-            <Route path="chat/:reclamoId" element={<ChatWindow />} />
+              {/* Chat Routes - Restricted to non-clients */}
+              <Route path="chat" element={
+                <RoleProtectedRoute allowedRoles={['admin', 'user', 'superadmin']}>
+                  <ChatList />
+                </RoleProtectedRoute>
+              } />
+              <Route path="chat/:reclamoId" element={
+                <RoleProtectedRoute allowedRoles={['admin', 'user', 'superadmin']}>
+                  <ChatWindow />
+                </RoleProtectedRoute>
+              } />
 
-            <Route path="claim-statuses" element={<EstadoReclamoList />} />
-            <Route path="claim-statuses/new" element={<CreateEditEstadoReclamo />} />
-            <Route path="claim-statuses/:id/edit" element={<CreateEditEstadoReclamo />} />
+              <Route path="claim-statuses" element={<EstadoReclamoList />} />
+              <Route path="claim-statuses/new" element={<CreateEditEstadoReclamo />} />
+              <Route path="claim-statuses/:id/edit" element={<CreateEditEstadoReclamo />} />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

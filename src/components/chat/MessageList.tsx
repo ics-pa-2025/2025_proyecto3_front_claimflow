@@ -53,9 +53,12 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) 
                             className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                         >
                             <div className={`max-w-xs md:max-w-md px-4 py-2 rounded-lg ${isOwn
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-white text-gray-900 border border-gray-200'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white text-gray-900 border border-gray-200'
                                 }`}>
+                                <p className={`text-xs font-bold mb-1 ${isOwn ? 'text-blue-200' : 'text-primary-600'}`}>
+                                    {message.emisor.nombre || (message.emisor.tipo === 'cliente' ? 'Cliente' : 'Usuario')}
+                                </p>
                                 <p className="text-sm">{message.contenido}</p>
                                 <span className={`text-xs mt-1 block ${isOwn ? 'text-blue-100' : 'text-gray-500'
                                     }`}>

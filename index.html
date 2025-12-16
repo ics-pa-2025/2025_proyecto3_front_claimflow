@@ -6,6 +6,16 @@
   <link rel="icon" type="image/x-icon" href="/logo.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>my-react-app</title>
+  <script>
+    // Apply saved theme before React mounts to avoid flash of incorrect theme
+    try {
+      const theme = localStorage.getItem('theme');
+      if (theme === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    } catch (e) {
+      // ignore
+    }
+  </script>
 </head>
 
 <body>

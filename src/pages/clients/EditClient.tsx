@@ -121,7 +121,7 @@ export const EditClient = () => {
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
-                            <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md border border-red-200">
+                            <div className="p-3 text-sm text-[var(--accent)] bg-[rgba(189,147,249,0.08)] rounded-md border border-[rgba(189,147,249,0.18)] dark:bg-[rgba(189,147,249,0.12)] dark:border-[rgba(189,147,249,0.28)] dark:text-[var(--accent)]">
                                 {error}
                             </div>
                         )}

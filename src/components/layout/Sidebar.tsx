@@ -28,6 +28,16 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
         { icon: Settings, label: 'Configuración', to: '/settings' },
     ];
 
+    // For user: like admin but without Estados Reclamo and Usuarios
+    const userNavItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
+        { icon: FileText, label: 'Reclamos', to: '/claims' },
+        { icon: Building2, label: 'Clientes', to: '/clients' },
+        { icon: Briefcase, label: 'Proyectos', to: '/projects' },
+        { icon: Building2, label: 'Áreas', to: '/areas' },
+        { icon: Settings, label: 'Configuración', to: '/settings' },
+    ];
+
     // For client: only Dashboard and Solicitud Reclamo (to be created)
     const clientNavItems = [
         { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
@@ -40,24 +50,29 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
     let navItems = adminNavItems;
     if (user && user.role && user.role.name === 'client') {
         navItems = clientNavItems;
+    } else if (user && user.role && user.role.name === 'user') {
+        navItems = userNavItems;
     }
 
     return (
         <aside
             className={cn(
                 "fixed left-0 top-0 z-40 h-screen border-r border-secondary-200 bg-white transition-all duration-300 ease-in-out shadow-lg",
+                "dark:bg-[var(--surface)] dark:border-secondary-800",
                 isOpen ? "w-64 translate-x-0" : isMobile ? "-translate-x-full w-64" : "w-20 translate-x-0"
             )}
         >
             <div className="flex h-full flex-col">
                 <div className={cn(
                     "flex h-16 items-center border-b border-secondary-200 bg-gradient-to-r from-white to-secondary-50 transition-all duration-300",
+                    "dark:from-[var(--surface)] dark:to-[var(--panel)] dark:border-secondary-800",
                     isOpen ? "px-6" : "justify-center px-0"
                 )}>
                     <div className="flex items-center gap-3 font-bold text-xl text-secondary-900 overflow-hidden whitespace-nowrap">
                         <img src={logo} alt="ClaimFlow Logo" className="h-8 w-8 object-contain shrink-0" />
                         <span className={cn(
                             "bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent transition-opacity duration-300",
+                            "dark:from-primary-400 dark:to-primary-600",
                             isOpen ? "opacity-100" : "opacity-0 w-0"
                         )}>
                             ClaimFlow
@@ -76,9 +91,9 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
                                     cn(
                                         'flex items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition-all duration-200 group relative',
                                         isOpen ? "px-3" : "justify-center px-2",
-                                        isActive
-                                            ? 'bg-primary-50 text-primary-700'
-                                            : 'text-secondary-700 hover:bg-secondary-100 hover:text-secondary-900'
+                        isActive
+                            ? 'bg-primary-50 text-primary-700 dark:bg-[var(--accent)] dark:text-white'
+                            : 'text-secondary-700 hover:bg-secondary-100 hover:text-secondary-900 dark:hover:bg-[rgba(189,147,249,0.06)] dark:hover:text-white'
                                     )
                                 }
                                 title={!isOpen ? item.label : undefined}
@@ -102,16 +117,17 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
                     </nav>
                 </div>
 
-                <div className="border-t border-secondary-200 p-4">
+                <div className="border-t border-secondary-200 p-4 dark:border-secondary-800">
                     <button
                         onClick={logout}
                         className={cn(
-                            "flex w-full items-center gap-3 rounded-lg py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors",
+                            "flex w-full items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition-colors",
+                            "text-[var(--accent)] hover:bg-[rgba(189,147,249,0.08)] dark:hover:bg-[rgba(189,147,249,0.12)]",
                             isOpen ? "px-3" : "justify-center px-2"
                         )}
                         title={!isOpen ? "Cerrar Sesión" : undefined}
                     >
-                        <LogOut className="h-5 w-5 shrink-0" />
+                        <LogOut className="h-5 w-5 shrink-0 text-[var(--accent)]" />
                         <span className={cn(
                             "whitespace-nowrap transition-all duration-300",
                             isOpen ? "opacity-100" : "opacity-0 w-0 hidden"

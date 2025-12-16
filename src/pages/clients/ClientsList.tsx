@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import { Client } from '../../types';
-import { getClients, deleteClient } from '../../services/clients.service';
+import { getClients, deleteClient, getClientProjects } from '../../services/clients.service';
 
 export const ClientsList = () => {
     const navigate = useNavigate();
@@ -35,17 +35,33 @@ export const ClientsList = () => {
                 if (!token) return;
                 const data = await getClients(token);
 
-                // Map backend data to Client interface
-                const mappedClients: Client[] = data.map((item: any) => ({
-                    id: item._id,
-                    name: item.nombre,
-                    lastName: item.apellido,
-                    email: item.email,
-                    dni: item.dni,
-                    phone: item.telefono,
-                    projects: item.proyectos || []
-                }));
+                // Map backend data to Client interface and fetch projects
+                const mappedClientsPromises = data.map(async (item: any) => {
+                    let activeProjects = [];
+                    try {
+                        const proyectos = await getClientProjects(item._id, token);
+                        activeProjects = proyectos.map((proyecto: any) => ({
+                            id: proyecto._id,
+                            name: proyecto.nombre,
+                            type: proyecto.tipo?.nombre || proyecto.tipo,
+                            clientId: item._id
+                        }));
+                    } catch (err) {
+                        console.error(`Error fetching projects for client ${item._id}:`, err);
+                    }
 
+                    return {
+                        id: item._id,
+                        name: item.nombre,
+                        lastName: item.apellido,
+                        email: item.email,
+                        dni: item.dni,
+                        phone: item.telefono,
+                        projects: activeProjects
+                    };
+                });
+
+                const mappedClients = await Promise.all(mappedClientsPromises);
                 setClients(mappedClients);
             } catch (err: any) {
                 setError(err.message);
@@ -129,7 +145,7 @@ export const ClientsList = () => {
                                     </div>
                                 )}
                                 <div className="border-t border-secondary-100 pt-3">
-                                    <p className="mb-2 text-xs font-medium text-secondary-500 uppercase">Proyectos Activos</p>
+                                    <p className="mb-2 text-xs font-medium text-secondary-500 uppercase">Proyectos</p>
                                     <div className="space-y-1">
                                         {client.projects.map((project) => (
                                             <div key={project.id} className="flex items-center gap-2 text-sm text-secondary-700">
