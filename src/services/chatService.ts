@@ -18,7 +18,7 @@ interface Mensaje {
 export const chatService = {
     async getMessagesByReclamo(reclamoId: string): Promise<Mensaje[]> {
         try {
-            const token = Cookies.get('token');
+            const token = Cookies.get('access_token');
             const response = await fetch(`${API_URL}/mensaje/reclamo/${reclamoId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -38,7 +38,7 @@ export const chatService = {
 
     async markAsRead(messageId: string): Promise<void> {
         try {
-            const token = Cookies.get('token');
+            const token = Cookies.get('access_token');
             await fetch(`${API_URL}/mensaje/${messageId}/read`, {
                 method: 'PATCH',
                 headers: {
@@ -52,7 +52,7 @@ export const chatService = {
 
     async getUnreadCount(reclamoId: string, tipo: 'cliente' | 'usuario'): Promise<number> {
         try {
-            const token = Cookies.get('token');
+            const token = Cookies.get('access_token');
             const response = await fetch(`${API_URL}/mensaje/reclamo/${reclamoId}/unread/${tipo}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
