@@ -86,3 +86,17 @@ export const updateClaimStatus = async (id: string, estadoId: string, historialE
 
     return response.json();
 };
+
+export const getDashboardStats = async (token: string) => {
+    const response = await fetch(`${CLAIMS_API}/dashboard/stats`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al cargar estadísticas');
+    }
+
+    return response.json();
+};

@@ -1,7 +1,9 @@
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { AlertCircle, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
+import { getDashboardStats } from '../services/claims.service';
+import { useEffect, useState } from 'react';
+import Cookies from 'js-cookie';
 
 const data = [
     { name: 'Lun', reclamos: 4 },
@@ -22,6 +24,20 @@ const pieData = [
 const COLORS = ['#0ea5e9', '#64748b', '#94a3b8'];
 
 export const Dashboard = () => {
+    const [stats, setStats] = useState({
+        totalReclamos: 0,
+        porcentajeCrecimiento: '',
+        diferenciaMesAnterior: ''
+    });
+
+    useEffect(() => {
+        const token = Cookies.get('access_token');
+        if (token) {
+            getDashboardStats(token).then(data => {
+                setStats(data);
+            }).catch(console.error);
+        }
+    }, []);
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -36,8 +52,8 @@ export const Dashboard = () => {
                         <AlertCircle className="h-4 w-4 text-primary-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">1,234</div>
-                        <p className="text-xs text-secondary-500">+20.1% mes anterior</p>
+                        <div className="text-2xl font-bold">{stats.totalReclamos.toLocaleString()}</div>
+                        <p className="text-xs text-secondary-500">{stats.diferenciaMesAnterior}</p>
                     </CardContent>
                 </Card>
                 <Card hoverEffect>
@@ -106,7 +122,7 @@ export const Dashboard = () => {
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {pieData.map((entry, index) => (
+                                    {pieData.map((_entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
