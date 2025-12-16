@@ -1,4 +1,5 @@
 # Copiar el código fuente
+FROM node:20-alpine AS build
 COPY . .
 
 # Construir la aplicación (Vite genera en /dist)
