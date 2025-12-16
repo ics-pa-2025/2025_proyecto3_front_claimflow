@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Filter, Search, Eye, Loader2, X } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -9,6 +9,7 @@ import { getClaims } from '../../services/claims.service';
 import { getEstadosReclamo } from '../../services/estadoReclamo.service';
 import { getAreas } from '../../services/areas.service';
 import { getClients } from '../../services/clients.service';
+import { getTiposReclamo } from '../../services/tipoReclamo.service';
 import Cookies from 'js-cookie';
 import { useAuth } from '../../context/AuthContext';
 
@@ -24,6 +25,7 @@ export const ClaimsList = () => {
     const [estados, setEstados] = useState<any[]>([]);
     const [areas, setAreas] = useState<any[]>([]);
     const [clientes, setClientes] = useState<any[]>([]);
+    const [tipos, setTipos] = useState<any[]>([]);
 
     // Filter values
     const [filters, setFilters] = useState({
@@ -40,19 +42,21 @@ export const ClaimsList = () => {
             try {
                 const token = Cookies.get('access_token');
                 if (!token) return;
-                
-                const [claimsData, estadosData, areasData, clientesData] = await Promise.all([
+
+                const [claimsData, estadosData, areasData, clientesData, tiposData] = await Promise.all([
                     getClaims(token),
                     getEstadosReclamo(token),
                     getAreas(token),
-                    getClients(token)
+                    getClients(token),
+                    getTiposReclamo(token)
                 ]);
-                
+
                 setClaims(claimsData);
                 setFilteredClaims(claimsData);
                 setEstados(estadosData);
                 setAreas(areasData);
                 setClientes(clientesData);
+                setTipos(tiposData);
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -76,17 +80,23 @@ export const ClaimsList = () => {
             filtered = filtered.filter(claim => claim.area?._id === filters.area);
         }
         if (filters.tipo) {
-            filtered = filtered.filter(claim => 
-                claim.tipo?.toLowerCase().includes(filters.tipo.toLowerCase())
-            );
+            filtered = filtered.filter(claim => {
+                if (!claim.tipo) return false;
+                // If claim.tipo is an object (populated), check its _id
+                if (typeof claim.tipo === 'object' && claim.tipo._id) {
+                    return claim.tipo._id === filters.tipo;
+                }
+                // Fallback for legacy string data (though we are moving away from this)
+                return typeof claim.tipo === 'string' && claim.tipo === filters.tipo;
+            });
         }
         if (filters.fechaDesde) {
-            filtered = filtered.filter(claim => 
+            filtered = filtered.filter(claim =>
                 new Date(claim.createdAt) >= new Date(filters.fechaDesde)
             );
         }
         if (filters.fechaHasta) {
-            filtered = filtered.filter(claim => 
+            filtered = filtered.filter(claim =>
                 new Date(claim.createdAt) <= new Date(filters.fechaHasta)
             );
         }
@@ -143,8 +153,8 @@ export const ClaimsList = () => {
                         <Input className="pl-9" placeholder="Buscar por título, ID..." />
                     </div>
                     <div className="flex gap-2">
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => setShowFilterModal(true)}
                             className={cn(hasActiveFilters && "border-primary-500 text-primary-600")}
@@ -153,8 +163,8 @@ export const ClaimsList = () => {
                             Filtros {hasActiveFilters && `(${Object.values(filters).filter(v => v).length})`}
                         </Button>
                         {hasActiveFilters && (
-                            <Button 
-                                variant="ghost" 
+                            <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={clearFilters}
                             >
@@ -194,11 +204,11 @@ export const ClaimsList = () => {
                                         <tr key={claim._id} className="hover:bg-secondary-50 transition-colors">
                                             <td className="px-4 py-3 font-medium text-secondary-900">#{claim._id.slice(-6)}</td>
                                             <td className="px-4 py-3 text-secondary-700">
-                                                <div className="font-medium">{claim.tipo}</div>
+                                                <div className="font-medium">{claim.tipo?.nombre || claim.tipo || 'Sin tipo'}</div>
                                                 <div className="text-xs text-secondary-500">{claim.proyecto?.nombre || 'Sin proyecto'}</div>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <span 
+                                                <span
                                                     className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                                                     style={{
                                                         backgroundColor: claim.estado?.color ? `${claim.estado.color}20` : '#e5e7eb',
@@ -324,13 +334,18 @@ export const ClaimsList = () => {
                                 <label className="block text-sm font-medium text-secondary-700 mb-2">
                                     Tipo de Reclamo
                                 </label>
-                                <input
-                                    type="text"
+                                <select
                                     value={filters.tipo}
                                     onChange={(e) => handleFilterChange('tipo', e.target.value)}
-                                    placeholder="Ej: Técnico, Atención al cliente..."
                                     className="w-full px-3 py-2 border border-secondary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                />
+                                >
+                                    <option value="">Todos los tipos</option>
+                                    {tipos.map((tipo) => (
+                                        <option key={tipo._id} value={tipo._id}>
+                                            {tipo.nombre}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             {/* Fecha Desde */}
