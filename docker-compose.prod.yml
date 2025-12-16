@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/${GITHUB_REPOSITORY_NAME}:latest
+    container_name: frontend_nuevo_proyecto
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    networks:
+      - microservices
+
+networks:
+  microservices:
+    name: nuevo-proyecto-microservices
+    external: false
