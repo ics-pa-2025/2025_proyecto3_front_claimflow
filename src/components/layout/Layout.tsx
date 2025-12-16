@@ -28,7 +28,7 @@ export const Layout = () => {
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
     return (
-        <div className="min-h-screen bg-secondary-50 flex">
+    <div className="min-h-screen bg-secondary-50 flex dark:bg-[var(--bg)]">
             {/* Overlay for mobile */}
             {isMobile && isSidebarOpen && (
                 <div

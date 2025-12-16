@@ -163,7 +163,7 @@ export const CreateSolicitudReclamo = () => {
                             <label className="block text-sm font-medium text-secondary-700">Evidencia (puede adjuntar archivos)</label>
                             <Input type="file" name="evidencia" multiple onChange={handleFileChange} />
                         </div>
-                        {error && <div className="text-red-600 text-sm">{error}</div>}
+                        {error && <div className="text-[var(--accent)] text-sm dark:text-[var(--accent)]">{error}</div>}
                         <div className="flex justify-end">
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Crear Solicitud'}

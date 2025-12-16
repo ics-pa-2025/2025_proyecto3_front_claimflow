@@ -37,3 +37,92 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Dark mode overrides for commonly used utility classes.
+   These use !important to override Tailwind utility rules quickly
+   so the existing components gain a visible dark theme without
+   changing all class names across the codebase. */
+html.dark {
+  color-scheme: dark;
+}
+
+/* Theme variables for light and dark. Adjust these to change the global palettes. */
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --panel: #f1f5f9;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --primary-600: #2563eb;
+  --primary-500: #3b82f6;
+}
+
+html.dark {
+  --bg: #071029;       /* page background */
+  --surface: #0b1220;  /* cards / surfaces */
+  --panel: #0f172a;    /* slightly lighter panels */
+  --text: #e6eef8;     /* main text */
+  --muted: #9ca3af;    /* secondary text */
+  --border: #111827;   /* borders */
+  --primary-600: #2b6ee6;
+  --primary-500: #3b82f6;
+  color-scheme: dark;
+}
+
+/* Dracula-like accent (purple) */
+:root { --accent: #bd93f9; --accent-700: #9a6ff0; }
+html.dark { --accent: #bd93f9; --accent-700: #9a6ff0; }
+
+/* Map primary-50/primary-700 to purple accents in dark so active nav items use purple */
+html.dark .bg-primary-50 { background-color: rgba(189,147,249,0.12) !important; }
+html.dark .text-primary-700 { color: var(--accent) !important; }
+html.dark .text-primary-600 { color: var(--accent-700) !important; }
+
+/* Hover mapping for secondary light hover in dark to use subtle purple */
+html.dark .hover\:bg-secondary-100:hover { background-color: rgba(189,147,249,0.06) !important; }
+html.dark .hover\:bg-primary-50:hover { background-color: rgba(189,147,249,0.08) !important; }
+html.dark .hover\:bg-secondary-50:hover { background-color: rgba(189,147,249,0.04) !important; }
+
+/* Selection highlight */
+::selection { background: var(--accent); color: white; }
+html.dark ::selection { background: var(--accent); color: #0b1220; }
+
+/* Apply background/text tokens */
+html, body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* Map commonly-used utility classes to token values so existing components inherit the theme */
+.min-h-screen { background-color: var(--bg); }
+.bg-white { background-color: var(--surface) !important; }
+.bg-secondary-50 { background-color: var(--panel) !important; }
+.text-secondary-900 { color: var(--text) !important; }
+.text-secondary-950 { color: var(--text) !important; }
+.text-secondary-500 { color: var(--muted) !important; }
+.border-secondary-200, .border-secondary-300 { border-color: var(--border) !important; }
+.divide-secondary-200 { border-color: var(--border) !important; }
+.bg-primary-600 { background-color: var(--primary-600) !important; }
+.bg-primary-100 { background-color: rgba(59,130,246,0.08) !important; }
+
+/* Header-specific adjustments when using translucent backgrounds */
+header.sticky { background-color: rgba(255,255,255,0.8); }
+html.dark header.sticky { background-color: rgba(6,10,18,0.92) !important; border-bottom-color: var(--border) !important; }
+
+/* Inputs & search */
+input[class*="bg-secondary-50"], .bg-secondary-50 input, .bg-secondary-50 textarea { background-color: var(--panel) !important; }
+
+/* Reduce stark white ring in dark */
+.ring-white { --tw-ring-color: rgba(255,255,255,0.92); }
+html.dark .ring-white { --tw-ring-color: rgba(255,255,255,0.06) !important; }
+
+/* Map existing red utilities to the accent (purple) theme so alerts and destructive actions use the same color */
+.bg-red-50 { background-color: rgba(189,147,249,0.08) !important; }
+.text-red-500 { color: var(--accent) !important; }
+.text-red-600 { color: var(--accent-700) !important; }
+.text-red-700 { color: var(--accent-700) !important; }
+.border-red-200 { border-color: rgba(189,147,249,0.18) !important; }
+html.dark .bg-red-50 { background-color: rgba(189,147,249,0.12) !important; }
+html.dark .text-red-500 { color: var(--accent) !important; }
+html.dark .border-red-200 { border-color: rgba(189,147,249,0.28) !important; }
