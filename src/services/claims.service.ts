@@ -66,3 +66,23 @@ export const updateClaim = async (id: string, data: FormData, token: string) => 
 
     return response.json();
 };
+
+export const updateClaimStatus = async (id: string, estadoId: string, historialEntry: { accion: string, responsable: string }, token: string) => {
+    const response = await fetch(`${CLAIMS_API}/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            estado: estadoId,
+            newHistorialEntry: historialEntry
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al actualizar el estado del reclamo');
+    }
+
+    return response.json();
+};
