@@ -32,6 +32,8 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
     const clientNavItems = [
         { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
         { icon: FileText, label: 'Solicitud Reclamo', to: '/solicitud-reclamo' },
+        { icon: Briefcase, label: 'Proyectos', to: '/projects' },
+        { icon: FileText, label: 'Reclamos', to: '/claims' },
     ];
 
     // Determine which nav items to show
