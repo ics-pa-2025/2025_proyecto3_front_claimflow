@@ -33,7 +33,7 @@ export const Header = ({ toggleSidebar, isSidebarOpen }: HeaderProps) => {
     };
 
     return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center border-b border-secondary-200 bg-white/80 px-4 sm:px-6 backdrop-blur-sm transition-all duration-300 dark:bg-[#060a12]/90 dark:border-secondary-800">
+        <header className="sticky top-0 z-30 flex h-16 w-full items-center border-b border-secondary-200 bg-white/80 px-4 sm:px-6 backdrop-blur-sm transition-all duration-300 dark:bg-[#060a12]/90 dark:border-secondary-800">
             <div className="flex items-center gap-4">
                 <button
                     onClick={toggleSidebar}
@@ -57,11 +57,13 @@ export const Header = ({ toggleSidebar, isSidebarOpen }: HeaderProps) => {
             </div>
 
             <div className="flex items-center gap-4">
-                <Link to="/chat">
-                    <Button variant="ghost" size="sm" className="relative rounded-full w-9 h-9 p-0">
-                        <MessageCircle className="h-5 w-5 text-secondary-600 dark:text-secondary-300" />
-                    </Button>
-                </Link>
+                {user?.role?.name !== 'client' && (
+                    <Link to="/chat">
+                        <Button variant="ghost" size="sm" className="relative rounded-full w-9 h-9 p-0">
+                            <MessageCircle className="h-5 w-5 text-secondary-600 dark:text-secondary-300" />
+                        </Button>
+                    </Link>
+                )}
 
                 <Button variant="ghost" size="sm" className="relative rounded-full w-9 h-9 p-0">
                     <Bell className="h-5 w-5 text-secondary-600 dark:text-secondary-300" />

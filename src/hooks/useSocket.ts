@@ -32,6 +32,7 @@ export const useSocket = (): UseSocketReturn => {
         auth: {
           token,
           userId: user.id,
+          userName: user.name,
           userRole,
         },
         transports: ['websocket', 'polling'],

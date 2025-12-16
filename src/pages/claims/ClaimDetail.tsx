@@ -343,27 +343,29 @@ export const ClaimDetail = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="flex flex-col h-[500px]">
-                        <CardHeader className="flex-shrink-0">
-                            <CardTitle>Notas</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-1 flex flex-col p-4 overflow-hidden">
-                            {chatLoading ? (
-                                <div className="flex-1 flex items-center justify-center">
-                                    <Loader2 className="h-6 w-6 animate-spin text-primary-500" />
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="flex-1 overflow-y-auto mb-4 border rounded-md p-2 bg-gray-50">
-                                        <MessageList messages={messages} isTyping={isTyping} />
+                    {user?.role?.name !== 'client' && (
+                        <Card className="flex flex-col h-[500px]">
+                            <CardHeader className="flex-shrink-0">
+                                <CardTitle>Notas (Internas)</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1 flex flex-col p-4 overflow-hidden">
+                                {chatLoading ? (
+                                    <div className="flex-1 flex items-center justify-center">
+                                        <Loader2 className="h-6 w-6 animate-spin text-primary-500" />
                                     </div>
-                                    <div className="flex-shrink-0">
-                                        <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} />
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                                ) : (
+                                    <>
+                                        <div className="flex-1 overflow-y-auto mb-4 border rounded-md p-2 bg-gray-50">
+                                            <MessageList messages={messages} isTyping={isTyping} />
+                                        </div>
+                                        <div className="flex-shrink-0">
+                                            <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} />
+                                        </div>
+                                    </>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 <div className="space-y-6">
