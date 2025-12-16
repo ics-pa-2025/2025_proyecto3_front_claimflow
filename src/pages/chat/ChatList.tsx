@@ -27,7 +27,7 @@ export const ChatList: React.FC = () => {
 
     const loadReclamos = async () => {
         try {
-            const token = Cookies.get('token');
+            const token = Cookies.get('access_token');
             const response = await fetch(`${environment.apiUrl}/reclamo`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
