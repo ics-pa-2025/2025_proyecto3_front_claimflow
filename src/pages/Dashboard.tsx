@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { AlertCircle, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
-import { getDashboardStats, getClaimsPerDay } from '../services/claims.service';
+import { getDashboardStats, getClaimsPerDay, getClaimsByArea } from '../services/claims.service';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 
@@ -15,10 +15,10 @@ const initialData = [
     { name: 'Dom', reclamos: 0 },
 ];
 
-const pieData = [
-    { name: 'Ventas', value: 400 },
-    { name: 'Soporte', value: 300 },
-    { name: 'Facturación', value: 300 },
+const initialPieData = [
+    { name: 'Ventas', value: 0 },
+    { name: 'Soporte', value: 0 },
+    { name: 'Facturación', value: 0 },
 ];
 
 const COLORS = ['#0ea5e9', '#64748b', '#94a3b8'];
@@ -30,6 +30,7 @@ export const Dashboard = () => {
         diferenciaMesAnterior: ''
     });
     const [chartData, setChartData] = useState(initialData);
+    const [pieChartData, setPieChartData] = useState(initialPieData);
 
     useEffect(() => {
         const token = Cookies.get('access_token');
@@ -40,6 +41,13 @@ export const Dashboard = () => {
 
             getClaimsPerDay(token).then(data => {
                 setChartData(data);
+            }).catch(console.error);
+
+            getClaimsByArea(token).then(data => {
+                // Only update if we have data, otherwise keep initial structure or handle empty state
+                if (data && data.length > 0) {
+                    setPieChartData(data);
+                }
             }).catch(console.error);
         }
     }, []);
@@ -118,7 +126,7 @@ export const Dashboard = () => {
                         <ResponsiveContainer width="100%" height={350}>
                             <PieChart>
                                 <Pie
-                                    data={pieData}
+                                    data={pieChartData}
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={60}
@@ -127,7 +135,7 @@ export const Dashboard = () => {
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {pieData.map((_entry, index) => (
+                                    {pieChartData.map((_entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
@@ -135,9 +143,9 @@ export const Dashboard = () => {
                             </PieChart>
                         </ResponsiveContainer>
                         <div className="mt-4 flex justify-center gap-4">
-                            {pieData.map((entry, index) => (
+                            {pieChartData.map((entry, index) => (
                                 <div key={entry.name} className="flex items-center gap-2">
-                                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index] }} />
+                                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                                     <span className="text-sm text-secondary-600">{entry.name}</span>
                                 </div>
                             ))}
