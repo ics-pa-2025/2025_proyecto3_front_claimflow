@@ -48,14 +48,13 @@ jobs:
           port: ${{ secrets.DROPLET_SSH_PORT || '22' }}
           script: |
             set -e
-            mkdir -p /home/${{ secrets.DROPLET_USER }}/${{ github.event.repository.name }}
-            cd /home/${{ secrets.DROPLET_USER }}/${{ github.event.repository.name }}
-            
+            mkdir -p /home/${{ secrets.DROPLET_USER }}/2025_proyecto3_front_claimflow:latest
+            cd /home/${{ secrets.DROPLET_USER }}/2025_proyecto3_front_claimflow:latest
             # Download docker-compose.prod.yml if it doesn't exist
             if [ ! -f docker-compose.prod.yml ]; then
               curl -o docker-compose.prod.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.prod.yml
             fi
             
-            docker pull ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
+            docker pull ghcr.io/ics-pa-2025/2025_proyecto3_front_claimflow:latest
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
