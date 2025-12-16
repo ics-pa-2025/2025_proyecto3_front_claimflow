@@ -3,6 +3,7 @@ import { Bell, Search, Menu, PanelLeftClose, PanelLeftOpen, MessageCircle } from
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { useAuth } from '../../context/AuthContext';
 
 interface HeaderProps {
     toggleSidebar: () => void;
@@ -10,6 +11,27 @@ interface HeaderProps {
 }
 
 export const Header = ({ toggleSidebar, isSidebarOpen }: HeaderProps) => {
+    const { user } = useAuth();
+    
+    // Get user initials
+    const getInitials = (name: string) => {
+        const parts = name.split(' ');
+        if (parts.length >= 2) {
+            return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    };
+
+    // Get role display name
+    const getRoleDisplay = (roleName: string) => {
+        const roleMap: Record<string, string> = {
+            'admin': 'Administrador',
+            'user': 'Usuario',
+            'client': 'Cliente'
+        };
+        return roleMap[roleName] || roleName;
+    };
+
     return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center border-b border-secondary-200 bg-white/80 px-4 sm:px-6 backdrop-blur-sm transition-all duration-300 dark:bg-[#060a12]/90 dark:border-secondary-800">
             <div className="flex items-center gap-4">
@@ -50,11 +72,11 @@ export const Header = ({ toggleSidebar, isSidebarOpen }: HeaderProps) => {
 
                 <div className="flex items-center gap-3">
                     <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-secondary-900 dark:text-secondary-100">Admin User</p>
-                        <p className="text-xs text-secondary-500 dark:text-secondary-400">Administrador</p>
+                        <p className="text-sm font-medium text-secondary-900 dark:text-secondary-100">{user?.name || 'Usuario'}</p>
+                        <p className="text-xs text-secondary-500 dark:text-secondary-400">{user?.role ? getRoleDisplay(user.role.name) : 'Sin rol'}</p>
                     </div>
                     <div className="h-9 w-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium ring-2 ring-white shadow-sm dark:bg-primary-800 dark:text-primary-200 dark:ring-transparent">
-                        AU
+                        {user?.name ? getInitials(user.name) : 'U'}
                     </div>
                 </div>
             </div>
