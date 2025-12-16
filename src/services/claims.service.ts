@@ -100,3 +100,17 @@ export const getDashboardStats = async (token: string) => {
 
     return response.json();
 };
+
+export const getClaimsPerDay = async (token: string) => {
+    const response = await fetch(`${CLAIMS_API}/dashboard/chart-days`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al cargar datos del gráfico');
+    }
+
+    return response.json();
+};

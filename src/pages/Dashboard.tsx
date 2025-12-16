@@ -1,18 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { AlertCircle, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
-import { getDashboardStats } from '../services/claims.service';
+import { getDashboardStats, getClaimsPerDay } from '../services/claims.service';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 
-const data = [
-    { name: 'Lun', reclamos: 4 },
-    { name: 'Mar', reclamos: 7 },
-    { name: 'Mie', reclamos: 5 },
-    { name: 'Jue', reclamos: 12 },
-    { name: 'Vie', reclamos: 9 },
-    { name: 'Sab', reclamos: 3 },
-    { name: 'Dom', reclamos: 2 },
+const initialData = [
+    { name: 'Lun', reclamos: 0 },
+    { name: 'Mar', reclamos: 0 },
+    { name: 'Mie', reclamos: 0 },
+    { name: 'Jue', reclamos: 0 },
+    { name: 'Vie', reclamos: 0 },
+    { name: 'Sab', reclamos: 0 },
+    { name: 'Dom', reclamos: 0 },
 ];
 
 const pieData = [
@@ -29,12 +29,17 @@ export const Dashboard = () => {
         porcentajeCrecimiento: '',
         diferenciaMesAnterior: ''
     });
+    const [chartData, setChartData] = useState(initialData);
 
     useEffect(() => {
         const token = Cookies.get('access_token');
         if (token) {
             getDashboardStats(token).then(data => {
                 setStats(data);
+            }).catch(console.error);
+
+            getClaimsPerDay(token).then(data => {
+                setChartData(data);
             }).catch(console.error);
         }
     }, []);
@@ -95,7 +100,7 @@ export const Dashboard = () => {
                     </CardHeader>
                     <CardContent className="pl-2">
                         <ResponsiveContainer width="100%" height={350}>
-                            <BarChart data={data}>
+                            <BarChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
