@@ -46,3 +46,17 @@ export const deleteClient = async (id: string, token: string) => {
 
     return response.json();
 };
+
+export const getClientProjects = async (clientId: string, token: string) => {
+    const response = await fetch(`${CLIENTS_API}/${clientId}/proyectos`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al cargar proyectos');
+    }
+
+    return response.json();
+};
