@@ -11,11 +11,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = 'primary', size = 'md', isLoading, children, ...props }, ref) => {
         const variants = {
-            primary: 'bg-primary-600 text-white hover:bg-primary-700 shadow-sm',
-            secondary: 'bg-secondary-100 text-secondary-900 hover:bg-secondary-200',
-            outline: 'border border-secondary-300 bg-transparent hover:bg-secondary-50 text-secondary-700',
-            ghost: 'bg-transparent hover:bg-secondary-100 text-secondary-700',
-            danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
+            primary: 'bg-primary-600 text-white hover:bg-primary-700 shadow-sm dark:bg-primary-500 dark:hover:bg-primary-600 dark:active:bg-primary-700',
+            secondary: 'bg-secondary-100 text-secondary-900 hover:bg-secondary-200 dark:bg-secondary-800 dark:text-secondary-100 dark:hover:bg-secondary-700',
+            outline: 'border border-secondary-300 bg-transparent hover:bg-secondary-50 text-secondary-700 dark:border-secondary-700 dark:text-secondary-200 dark:hover:bg-secondary-800 dark:active:bg-secondary-700',
+            ghost: 'bg-transparent hover:bg-secondary-100 text-secondary-700 dark:text-secondary-200 dark:hover:bg-secondary-800 dark:active:bg-secondary-700',
+            danger: 'bg-[var(--accent-700)] text-white hover:bg-[var(--accent)] shadow-sm dark:bg-[var(--accent-700)] dark:hover:bg-[var(--accent)]',
         };
 
         const sizes = {
