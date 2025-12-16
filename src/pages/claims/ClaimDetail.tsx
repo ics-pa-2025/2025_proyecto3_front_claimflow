@@ -6,9 +6,11 @@ import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { MOCK_CLAIMS } from '../../lib/mock-data';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
 
 export const ClaimDetail = () => {
     const { id } = useParams();
+    const { user } = useAuth();
     const claim = MOCK_CLAIMS.find(c => c.id === id) || MOCK_CLAIMS[0];
     const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -99,27 +101,29 @@ export const ClaimDetail = () => {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                <div className="flex gap-4">
-                                    <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium text-sm">
-                                        AU
-                                    </div>
-                                    <div className="flex-1 space-y-2">
-                                        <textarea
-                                            className="w-full rounded-md border border-secondary-200 p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none min-h-[80px]"
-                                            placeholder="Escribe un comentario interno..."
-                                        />
-                                        <div className="flex justify-between items-center">
-                                            <Button variant="ghost" size="sm" className="text-secondary-500">
-                                                <Paperclip className="h-4 w-4 mr-2" />
-                                                Adjuntar archivo
-                                            </Button>
-                                            <Button size="sm">
-                                                <Send className="h-4 w-4 mr-2" />
-                                                Enviar
-                                            </Button>
+                                {user?.role?.name !== 'client' && (
+                                    <div className="flex gap-4">
+                                        <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium text-sm">
+                                            AU
+                                        </div>
+                                        <div className="flex-1 space-y-2">
+                                            <textarea
+                                                className="w-full rounded-md border border-secondary-200 p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none min-h-[80px]"
+                                                placeholder="Escribe un comentario interno..."
+                                            />
+                                            <div className="flex justify-between items-center">
+                                                <Button variant="ghost" size="sm" className="text-secondary-500">
+                                                    <Paperclip className="h-4 w-4 mr-2" />
+                                                    Adjuntar archivo
+                                                </Button>
+                                                <Button size="sm">
+                                                    <Send className="h-4 w-4 mr-2" />
+                                                    Enviar
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -151,21 +155,23 @@ export const ClaimDetail = () => {
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Acciones</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            <Button variant="outline" className="w-full justify-start">
-                                <User className="mr-2 h-4 w-4" />
-                                Reasignar
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start">
-                                <CheckCircle2 className="mr-2 h-4 w-4" />
-                                Marcar como Resuelto
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    {user?.role?.name !== 'client' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Acciones</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2">
+                                <Button variant="outline" className="w-full justify-start">
+                                    <User className="mr-2 h-4 w-4" />
+                                    Reasignar
+                                </Button>
+                                <Button variant="outline" className="w-full justify-start">
+                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                    Marcar como Resuelto
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </div>

@@ -15,8 +15,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [user, setUser] = useState<User | null>({
+        id: '999',
+        name: 'Cliente Mock',
+        email: 'cliente@mock.com',
+        role: { id: 'r1', name: 'client', description: 'Cliente' },
+        avatar: 'https://ui-avatars.com/api/?name=Cliente+Mock'
+    });
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {

@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { cn } from '../../lib/utils';
 import { getClaims } from '../../services/claims.service';
 import Cookies from 'js-cookie';
+import { useAuth } from '../../context/AuthContext';
 
 export const ClaimsList = () => {
+    const { user } = useAuth();
     const [claims, setClaims] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,12 +46,14 @@ export const ClaimsList = () => {
                     <h1 className="text-3xl font-bold text-secondary-900">Reclamos</h1>
                     <p className="text-secondary-500">Gestiona y da seguimiento a los reclamos ({claims.length})</p>
                 </div>
-                <Link to="/claims/new">
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nuevo Reclamo
-                    </Button>
-                </Link>
+                {user?.role?.name !== 'client' && (
+                    <Link to="/claims/new">
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Nuevo Reclamo
+                        </Button>
+                    </Link>
+                )}
             </div>
 
             <Card>
@@ -126,11 +130,13 @@ export const ClaimsList = () => {
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <Link to={`/claims/${claim._id}/edit`}>
-                                                        <Button variant="ghost" size="sm">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                                                        </Button>
-                                                    </Link>
+                                                    {user?.role?.name !== 'client' && (
+                                                        <Link to={`/claims/${claim._id}/edit`}>
+                                                            <Button variant="ghost" size="sm">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                                            </Button>
+                                                        </Link>
+                                                    )}
                                                     <Link to={`/claims/${claim._id}`}>
                                                         <Button variant="ghost" size="sm">
                                                             <Eye className="h-4 w-4" />
