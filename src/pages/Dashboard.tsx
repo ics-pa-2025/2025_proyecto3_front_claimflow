@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { AlertCircle, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { getDashboardStats, getClaimsPerDay, getClaimsByArea } from '../services/claims.service';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
@@ -27,7 +27,9 @@ export const Dashboard = () => {
     const [stats, setStats] = useState({
         totalReclamos: 0,
         porcentajeCrecimiento: '',
-        diferenciaMesAnterior: ''
+        diferenciaMesAnterior: '',
+        reclamosEnProceso: 0,
+        reclamosFinalizados: 0
     });
     const [chartData, setChartData] = useState(initialData);
     const [pieChartData, setPieChartData] = useState(initialPieData);
@@ -58,8 +60,8 @@ export const Dashboard = () => {
                 <div className="text-sm text-secondary-500">Última actualización: Hoy, 14:30</div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card hoverEffect>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-secondary-500">Total Reclamos</CardTitle>
                         <AlertCircle className="h-4 w-4 text-primary-600" />
@@ -69,36 +71,27 @@ export const Dashboard = () => {
                         <p className="text-xs text-secondary-500">{stats.diferenciaMesAnterior}</p>
                     </CardContent>
                 </Card>
-                <Card hoverEffect>
+                <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-secondary-500">En Proceso</CardTitle>
-                        <Clock className="h-4 w-4 text-orange-500" />
+                        <CardTitle className="text-sm font-medium">Reclamos en Proceso</CardTitle>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">45</div>
-                        <p className="text-xs text-secondary-500">-4% desde ayer</p>
+                        <div className="text-2xl font-bold">{stats.reclamosEnProceso}</div>
+                        <p className="text-xs text-muted-foreground">En gestión activa</p>
                     </CardContent>
                 </Card>
-                <Card hoverEffect>
+                <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-secondary-500">Cerrados</CardTitle>
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <CardTitle className="text-sm font-medium">Reclamos Cerrados</CardTitle>
+                        <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">1,189</div>
-                        <p className="text-xs text-secondary-500">+12% esta semana</p>
+                        <div className="text-2xl font-bold">{stats.reclamosFinalizados}</div>
+                        <p className="text-xs text-muted-foreground">Total histórico</p>
                     </CardContent>
                 </Card>
-                <Card hoverEffect>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-secondary-500">Tiempo Promedio</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-blue-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">2.4h</div>
-                        <p className="text-xs text-secondary-500">-30min mejora</p>
-                    </CardContent>
-                </Card>
+
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
