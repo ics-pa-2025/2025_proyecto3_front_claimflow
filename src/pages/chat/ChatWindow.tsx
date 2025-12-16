@@ -98,9 +98,9 @@ export const ChatWindow: React.FC = () => {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50">
+        <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-50 -m-6">
             {/* Header */}
-            <div className="bg-white border-b px-6 py-4 shadow-sm">
+            <div className="bg-white border-b px-6 py-4 shadow-sm flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                         <button
