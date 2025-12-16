@@ -88,7 +88,7 @@ export const CreateSolicitudReclamo = () => {
             data.append('area', formData.area);
             data.append('cliente', clienteId);
             data.append('proyecto', formData.proyecto);
-            formData.files.forEach((file, idx) => {
+            formData.files.forEach((file) => {
                 data.append('evidencia', file);
             });
             const res = await fetch(`${environment.apiUrl}/solicitud-reclamo`, {
@@ -99,7 +99,14 @@ export const CreateSolicitudReclamo = () => {
                 body: data
             });
             if (!res.ok) throw new Error('Error al crear la solicitud');
-            navigate('/solicitud-reclamo');
+            const responseData = await res.json().catch(() => null);
+            // If backend returned the created reclamo, navigate to its detail
+            if (responseData && responseData.reclamo && responseData.reclamo._id) {
+                navigate(`/claims/${responseData.reclamo._id}`);
+            } else {
+                // Fallback: go to claims list
+                navigate('/claims');
+            }
         } catch (err: any) {
             setError(err.message);
         } finally {

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, X, Paperclip, Loader2 } from 'lucide-react';
+import { Save, X, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { createClaim, getClaimById, updateClaim } from '../../services/claims.service';
+import { environment } from '../../environment/environments';
 import { getProjects } from '../../services/projects.service';
 import { getClients } from '../../services/clients.service';
 import { CLAIM_TYPE_OPTIONS } from '../../types';
@@ -58,31 +59,69 @@ export const CreateClaim = () => {
                 setAreas(areasData);
 
                 if (isEditMode) {
-                    const claim = await getClaimById(id, token);
-                    const projectId = claim.proyecto?._id || claim.proyecto;
-                    const clientId = claim.cliente?._id || claim.cliente;
-                    const estadoId = claim.estado?._id || claim.estado || (typeof claim.estado === 'string' ? claim.estado : '');
-                    const areaId = claim.area?._id || claim.area || (typeof claim.area === 'string' ? claim.area : '');
+                    if (id && id.startsWith('sol-')) {
+                        // Load solicitud data instead of reclamo
+                        const solId = id.replace('sol-', '');
+                        const solRes = await fetch(`${environment.apiUrl}/solicitud-reclamo/${solId}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (!solRes.ok) throw new Error('Error al cargar la solicitud');
+                        const sol = await solRes.json();
 
-                    setFormData({
-                        tipo: claim.tipo,
-                        prioridad: claim.prioridad,
-                        criticidad: claim.criticidad,
-                        descripcion: claim.descripcion,
-                        proyecto: projectId,
-                        cliente: clientId,
-                        estado: estadoId,
-                        // @ts-ignore
-                        area: areaId,
-                        file: null
-                    });
-                    // Filter projects based on the loaded (and set) client
-                    if (clientId) {
-                        const clientProjects = projectsData.filter((p: any) =>
-                            (p.clienteId && (p.clienteId === clientId || p.clienteId._id === clientId))
-                        );
-                        setFilteredProjects(clientProjects);
+                        const projectId = sol.proyecto?._id || sol.proyecto;
+                        const clientId = sol.cliente?._id || sol.cliente;
+                        const areaId = sol.area?._id || sol.area;
+
+                        // Find 'Pendiente' estado if exists
+                        const pendiente = estadosData.find((e: any) => e.nombre === 'Pendiente');
+
+                        setFormData({
+                            tipo: sol.tipo,
+                            prioridad: '', // no prioridad by default
+                            criticidad: (sol as any).criticidad || 'Media',
+                            descripcion: sol.descripcion,
+                            proyecto: projectId,
+                            cliente: clientId,
+                            estado: pendiente ? pendiente._id : '',
+                            // @ts-ignore
+                            area: areaId,
+                            file: null
+                        });
+
+                        if (clientId) {
+                            const clientProjects = projectsData.filter((p: any) =>
+                                (p.clienteId && (p.clienteId === clientId || p.clienteId._id === clientId))
+                            );
+                            setFilteredProjects(clientProjects);
+                        }
+                    } else {
+                        const claim = await getClaimById(id, token);
+                        const projectId = claim.proyecto?._id || claim.proyecto;
+                        const clientId = claim.cliente?._id || claim.cliente;
+                        const estadoId = claim.estado?._id || claim.estado || (typeof claim.estado === 'string' ? claim.estado : '');
+                        const areaId = claim.area?._id || claim.area || (typeof claim.area === 'string' ? claim.area : '');
+
+                        setFormData({
+                            tipo: claim.tipo,
+                            prioridad: claim.prioridad || '',
+                            criticidad: claim.criticidad,
+                            descripcion: claim.descripcion,
+                            proyecto: projectId,
+                            cliente: clientId,
+                            estado: estadoId,
+                            // @ts-ignore
+                            area: areaId,
+                            file: null
+                        });
+                        // Filter projects based on the loaded (and set) client
+                        if (clientId) {
+                            const clientProjects = projectsData.filter((p: any) =>
+                                (p.clienteId && (p.clienteId === clientId || p.clienteId._id === clientId))
+                            );
+                            setFilteredProjects(clientProjects);
+                        }
                     }
+                    
 
                 } else {
                     // Pre-select 'Pendiente' if acceptable, otherwise leave empty or let backend handle it.
@@ -106,10 +145,9 @@ export const CreateClaim = () => {
     // Handle Client Change -> Filter Projects
     const handleClientChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedClientId = e.target.value;
-        const previousClientId = formData.cliente;
-
-        // Update Form
-        setFormData(prev => ({ ...prev, cliente: selectedClientId }));
+        
+            // Update Form
+            setFormData(prev => ({ ...prev, cliente: selectedClientId }));
 
         // Filter Projects
         if (selectedClientId) {
@@ -192,12 +230,22 @@ export const CreateClaim = () => {
             }
 
             if (isEditMode) {
-                await updateClaim(id, data, token);
+                if (id && id.startsWith('sol-')) {
+                    // Create a new reclamo from the solicitud
+                    // include solicitud id so backend links them
+                    const solId = id.replace('sol-', '');
+                    data.append('solicitud', solId);
+                    const newReclamo = await createClaim(data, token);
+                    // navigate to edit page of the newly created reclamo
+                    navigate(`/claims/${newReclamo._id}/edit`);
+                } else {
+                    await updateClaim(id, data, token);
+                    navigate('/claims');
+                }
             } else {
                 await createClaim(data, token);
+                navigate('/claims');
             }
-
-            navigate('/claims');
         } catch (err: any) {
             setError(err.message);
         } finally {

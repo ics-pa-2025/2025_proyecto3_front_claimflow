@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Filter, Search, Eye, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -6,6 +6,7 @@ import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { cn } from '../../lib/utils';
 import { getClaims } from '../../services/claims.service';
+import { environment } from '../../environment/environments';
 import Cookies from 'js-cookie';
 import { useAuth } from '../../context/AuthContext';
 
@@ -20,9 +21,61 @@ export const ClaimsList = () => {
             try {
                 const token = Cookies.get('access_token');
                 if (!token) return;
-                const data = await getClaims(token);
-                console.log(data);
-                setClaims(data);
+                // Use Promise.allSettled so a failure fetching solicitudes doesn't break the entire view
+                const [claimsResult, solicitudesResult] = await Promise.allSettled([
+                    getClaims(token),
+                    fetch(`${environment.apiUrl}/solicitud-reclamo`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                const claimsData = claimsResult.status === 'fulfilled' ? claimsResult.value : [];
+                let solicitudesData: any[] = [];
+                if (solicitudesResult.status === 'fulfilled') {
+                    const res = solicitudesResult.value as Response;
+                    if (res && res.ok) {
+                        solicitudesData = await res.json();
+                    }
+                }
+
+                // Build a set of solicitud IDs that already have an associated reclamo
+                const solicitudesConReclamo = new Set<string>();
+                (claimsData || []).forEach((c: any) => {
+                    if (c.solicitud) {
+                        solicitudesConReclamo.add((c.solicitud as any)._id ? (c.solicitud as any)._id.toString() : c.solicitud.toString());
+                    }
+                });
+
+                // Map solicitudes that don't have an associated reclamo into pseudo-claims with estado 'Pendiente'
+                const mappedFromSolicitudes = (solicitudesData || []).reduce((acc: any[], sol: any) => {
+                    const solId = sol._id;
+                    if (!solicitudesConReclamo.has(solId.toString())) {
+                        acc.push({
+                            _id: `sol-${sol._id}`,
+                            tipo: sol.tipo,
+                            proyecto: sol.proyecto,
+                            estado: { nombre: 'Pendiente', color: '#FFA500' },
+                            // don't assign prioridad by default for solicitudes
+                            prioridad: (sol as any).prioridad || undefined,
+                            area: sol.area,
+                            cliente: sol.cliente,
+                            descripcion: sol.descripcion,
+                            evidencia: sol.evidencia,
+                            createdAt: sol.createdAt,
+                        });
+                    }
+                    return acc;
+                }, [] as any[]);
+
+                const combined = [...(claimsData || []), ...mappedFromSolicitudes];
+                // Optionally sort by createdAt desc
+                combined.sort((a: any, b: any) => {
+                    const da = new Date(a.createdAt || a._id).getTime();
+                    const db = new Date(b.createdAt || b._id).getTime();
+                    return db - da;
+                });
+
+                setClaims(combined);
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -122,7 +175,7 @@ export const ClaimsList = () => {
                                                     claim.prioridad === 'Media' && "bg-orange-100 text-orange-800",
                                                     claim.prioridad === 'Baja' && "bg-gray-100 text-gray-800",
                                                 )}>
-                                                    {claim.prioridad}
+                                                    {claim.prioridad || '-'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-secondary-700">{claim.area?.nombre || 'Sin área'}</td>
