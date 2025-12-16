@@ -28,6 +28,16 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
         { icon: Settings, label: 'Configuración', to: '/settings' },
     ];
 
+    // For user: like admin but without Estados Reclamo and Usuarios
+    const userNavItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
+        { icon: FileText, label: 'Reclamos', to: '/claims' },
+        { icon: Building2, label: 'Clientes', to: '/clients' },
+        { icon: Briefcase, label: 'Proyectos', to: '/projects' },
+        { icon: Building2, label: 'Áreas', to: '/areas' },
+        { icon: Settings, label: 'Configuración', to: '/settings' },
+    ];
+
     // For client: only Dashboard and Solicitud Reclamo (to be created)
     const clientNavItems = [
         { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
@@ -40,6 +50,8 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
     let navItems = adminNavItems;
     if (user && user.role && user.role.name === 'client') {
         navItems = clientNavItems;
+    } else if (user && user.role && user.role.name === 'user') {
+        navItems = userNavItems;
     }
 
     return (
