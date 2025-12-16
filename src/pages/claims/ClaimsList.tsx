@@ -21,6 +21,7 @@ export const ClaimsList = () => {
                 const token = Cookies.get('access_token');
                 if (!token) return;
                 const data = await getClaims(token);
+                console.log(data);
                 setClaims(data);
             } catch (err: any) {
                 setError(err.message);
@@ -104,14 +105,14 @@ export const ClaimsList = () => {
                                                 <div className="text-xs text-secondary-500">{claim.proyecto?.nombre || 'Sin proyecto'}</div>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <span className={cn(
-                                                    "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                                                    claim.estado === 'Pendiente' && "bg-blue-100 text-blue-800",
-                                                    claim.estado === 'En Proceso' && "bg-yellow-100 text-yellow-800",
-                                                    claim.estado === 'Cerrado' && "bg-green-100 text-green-800",
-                                                    !['Pendiente', 'En Proceso', 'Cerrado'].includes(claim.estado) && "bg-gray-100 text-gray-800"
-                                                )}>
-                                                    {claim.estado}
+                                                <span 
+                                                    className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                                                    style={{
+                                                        backgroundColor: claim.estado?.color ? `${claim.estado.color}20` : '#e5e7eb',
+                                                        color: claim.estado?.color || '#374151'
+                                                    }}
+                                                >
+                                                    {claim.estado?.nombre || 'Sin estado'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
@@ -124,7 +125,7 @@ export const ClaimsList = () => {
                                                     {claim.prioridad}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-secondary-700">{claim.area}</td>
+                                            <td className="px-4 py-3 text-secondary-700">{claim.area?.nombre || 'Sin área'}</td>
                                             <td className="px-4 py-3 text-secondary-700">
                                                 {claim.cliente ? `${claim.cliente.nombre} ${claim.cliente.apellido}` : 'Sin cliente'}
                                             </td>
