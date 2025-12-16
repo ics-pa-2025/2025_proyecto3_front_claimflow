@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/${GITHUB_REPOSITORY_NAME}:latest
+    image: ghcr.io/ics-pa-2025/2025_proyecto3_front_claimflow:latest
     container_name: frontend_nuevo_proyecto
     restart: unless-stopped
     ports:
