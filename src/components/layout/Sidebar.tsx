@@ -24,6 +24,7 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
         { icon: Building2, label: 'Clientes', to: '/clients' },
         { icon: Briefcase, label: 'Proyectos', to: '/projects' },
         { icon: LayoutDashboard, label: 'Estados Reclamo', to: '/claim-statuses' },
+        { icon: ListChecks, label: 'Tipos de Reclamo', to: '/claim-types' },
         { icon: Building2, label: 'Áreas', to: '/areas' },
         { icon: Settings, label: 'Configuración', to: '/settings' },
     ];
@@ -91,9 +92,9 @@ export const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
                                     cn(
                                         'flex items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition-all duration-200 group relative',
                                         isOpen ? "px-3" : "justify-center px-2",
-                        isActive
-                            ? 'bg-primary-50 text-primary-700 dark:bg-[var(--accent)] dark:text-white'
-                            : 'text-secondary-700 hover:bg-secondary-100 hover:text-secondary-900 dark:hover:bg-[rgba(189,147,249,0.06)] dark:hover:text-white'
+                                        isActive
+                                            ? 'bg-primary-50 text-primary-700 dark:bg-[var(--accent)] dark:text-white'
+                                            : 'text-secondary-700 hover:bg-secondary-100 hover:text-secondary-900 dark:hover:bg-[rgba(189,147,249,0.06)] dark:hover:text-white'
                                     )
                                 }
                                 title={!isOpen ? item.label : undefined}

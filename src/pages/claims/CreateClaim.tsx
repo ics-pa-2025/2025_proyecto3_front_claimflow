@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, X, Paperclip, Loader2 } from 'lucide-react';
+import { Upload, X, Check, Save, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { createClaim, getClaimById, updateClaim } from '../../services/claims.service';
 import { getProjects } from '../../services/projects.service';
 import { getClients } from '../../services/clients.service';
-import { CLAIM_TYPE_OPTIONS } from '../../types';
 import Cookies from 'js-cookie';
 import { getEstadosReclamo } from '../../services/estadoReclamo.service';
 import { getAreas } from '../../services/areas.service';
+import { getTiposReclamo, TipoReclamo } from '../../services/tipoReclamo.service';
 
 export const CreateClaim = () => {
     const navigate = useNavigate();
@@ -25,9 +25,10 @@ export const CreateClaim = () => {
     const [clients, setClients] = useState<any[]>([]);
     const [estados, setEstados] = useState<any[]>([]);
     const [areas, setAreas] = useState<any[]>([]);
+    const [tipos, setTipos] = useState<TipoReclamo[]>([]);
 
     const [formData, setFormData] = useState({
-        tipo: 'Error de Software',
+        tipo: '',
         prioridad: 'Media',
         criticidad: 'Media',
         descripcion: '',
@@ -44,11 +45,12 @@ export const CreateClaim = () => {
                 const token = Cookies.get('access_token');
                 if (!token) return;
 
-                const [projectsData, clientsData, estadosData, areasData] = await Promise.all([
+                const [projectsData, clientsData, estadosData, areasData, tiposData] = await Promise.all([
                     getProjects(token),
                     getClients(token),
                     getEstadosReclamo(token),
-                    getAreas(token)
+                    getAreas(token),
+                    getTiposReclamo(token)
                 ]);
 
                 setAllProjects(projectsData);
@@ -56,16 +58,19 @@ export const CreateClaim = () => {
                 setClients(clientsData);
                 setEstados(estadosData);
                 setAreas(areasData);
+                setTipos(tiposData);
 
                 if (isEditMode) {
+
                     const claim = await getClaimById(id, token);
                     const projectId = claim.proyecto?._id || claim.proyecto;
                     const clientId = claim.cliente?._id || claim.cliente;
                     const estadoId = claim.estado?._id || claim.estado || (typeof claim.estado === 'string' ? claim.estado : '');
                     const areaId = claim.area?._id || claim.area || (typeof claim.area === 'string' ? claim.area : '');
+                    const tipoId = claim.tipo?._id || claim.tipo || (typeof claim.tipo === 'string' ? claim.tipo : '');
 
                     setFormData({
-                        tipo: claim.tipo,
+                        tipo: tipoId,
                         prioridad: claim.prioridad,
                         criticidad: claim.criticidad,
                         descripcion: claim.descripcion,
@@ -106,7 +111,9 @@ export const CreateClaim = () => {
     // Handle Client Change -> Filter Projects
     const handleClientChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedClientId = e.target.value;
-        const previousClientId = formData.cliente;
+        // If client changed, we might want to clear project selection or fetch new projects
+        // But getProjects() fetches ALL projects currently.
+        // If we implement getProjectsByClient(clientId), we would call it here.
 
         // Update Form
         setFormData(prev => ({ ...prev, cliente: selectedClientId }));
@@ -293,8 +300,10 @@ export const CreateClaim = () => {
                                     required
                                 >
                                     <option value="">Seleccione un tipo</option>
-                                    {CLAIM_TYPE_OPTIONS.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    {tipos.map(tipo => (
+                                        <option key={tipo._id} value={tipo._id} disabled={!tipo.activo}>
+                                            {tipo.nombre}
+                                        </option>
                                     ))}
                                 </select>
                             </div>

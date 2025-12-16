@@ -292,7 +292,7 @@ export const ClaimDetail = () => {
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div>
-                                <h3 className="font-semibold text-secondary-900">{claim.tipo}</h3>
+                                <h3 className="font-semibold text-secondary-900">{claim.tipo?.nombre || claim.tipo || 'Sin Tipo'}</h3>
                                 <p className="mt-2 text-secondary-600 leading-relaxed">
                                     {claim.descripcion}
                                 </p>
@@ -326,10 +326,12 @@ export const ClaimDetail = () => {
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <span className="text-xs font-medium text-secondary-500 uppercase">Área</span>
+                                    <span className="text-xs font-medium text-secondary-500 uppercase">Tipo</span>
                                     <div className="flex items-center gap-2 font-medium text-secondary-900">
-                                        <Building2 className="h-4 w-4 text-secondary-400" />
-                                        {claim.area?.nombre || 'Sin área'}
+                                        <p className="font-medium text-secondary-900">
+                                            {/* @ts-ignore */}
+                                            {claim.tipo?.nombre || claim.tipo || 'No especificado'}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="space-y-1">

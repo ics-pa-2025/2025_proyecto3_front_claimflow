@@ -24,6 +24,8 @@ import { AreasList } from './pages/areas/AreasList';
 import { CreateEditArea } from './pages/areas/CreateEditArea';
 import { ChatList } from './pages/chat/ChatList';
 import { ChatWindow } from './pages/chat/ChatWindow';
+import { TipoReclamoList } from './pages/tipo-reclamo/TipoReclamoList';
+import { CreateEditTipoReclamo } from './pages/tipo-reclamo/CreateEditTipoReclamo';
 
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -100,6 +102,10 @@ function App() {
               <Route path="claim-statuses" element={<EstadoReclamoList />} />
               <Route path="claim-statuses/new" element={<CreateEditEstadoReclamo />} />
               <Route path="claim-statuses/:id/edit" element={<CreateEditEstadoReclamo />} />
+
+              <Route path="claim-types" element={<TipoReclamoList />} />
+              <Route path="claim-types/new" element={<CreateEditTipoReclamo />} />
+              <Route path="claim-types/:id/edit" element={<CreateEditTipoReclamo />} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
