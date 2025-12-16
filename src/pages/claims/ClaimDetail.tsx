@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, User, Building2, AlertTriangle, CheckCircle2, Paperclip, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Building2, AlertTriangle, CheckCircle2, Paperclip, Loader2 } from 'lucide-react';
 import anime from 'animejs';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
@@ -9,6 +9,23 @@ import { useAuth } from '../../context/AuthContext';
 import { getClaimById, updateClaimStatus } from '../../services/claims.service';
 import Cookies from 'js-cookie';
 import { environment } from '../../environment/environments';
+import { useSocket } from '../../hooks/useSocket';
+import { chatService } from '../../services/chatService';
+import { MessageList } from '../../components/chat/MessageList';
+import { MessageInput } from '../../components/chat/MessageInput';
+
+interface Mensaje {
+    _id: string;
+    contenido: string;
+    emisor: {
+        tipo: 'cliente' | 'usuario';
+        id: string;
+        nombre?: string;
+    };
+    reclamoId: string;
+    leido: boolean;
+    fechaCreacion: string;
+}
 
 export const ClaimDetail = () => {
     const { id } = useParams();
@@ -21,6 +38,12 @@ export const ClaimDetail = () => {
     const [areas, setAreas] = useState<any[]>([]);
     const [selectedArea, setSelectedArea] = useState<string>('');
     const timelineRef = useRef<HTMLDivElement>(null);
+
+    // Chat State
+    const { socket, isConnected, joinRoom, leaveRoom, sendMessage, sendTyping } = useSocket();
+    const [messages, setMessages] = useState<Mensaje[]>([]);
+    const [isTyping, setIsTyping] = useState(false);
+    const [chatLoading, setChatLoading] = useState(true);
 
     useEffect(() => {
         const fetchClaim = async () => {
@@ -67,9 +90,69 @@ export const ClaimDetail = () => {
         fetchAreas();
     }, []);
 
+    useEffect(() => {
+        if (!id) return;
+
+        const loadMessages = async () => {
+            setChatLoading(true);
+            try {
+                const history = await chatService.getMessagesByReclamo(id);
+                setMessages(history);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            } finally {
+                setChatLoading(false);
+            }
+        };
+
+        loadMessages();
+
+        if (isConnected && socket) {
+            joinRoom(id);
+        }
+
+        return () => {
+            if (id) {
+                leaveRoom(id);
+            }
+        };
+    }, [id, isConnected]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewMessage = (message: Mensaje) => {
+            setMessages((prev) => [...prev, message]);
+        };
+
+        const handleUserTyping = ({ userId, isTyping }: { userId: string; isTyping: boolean }) => {
+            setIsTyping(isTyping);
+        };
+
+        socket.on('newMessage', handleNewMessage);
+        socket.on('userTyping', handleUserTyping);
+
+        return () => {
+            socket.off('newMessage', handleNewMessage);
+            socket.off('userTyping', handleUserTyping);
+        };
+    }, [socket]);
+
+    const handleSendMessage = (contenido: string) => {
+        if (id) {
+            sendMessage(id, contenido);
+        }
+    };
+
+    const handleTyping = (isTypingNow: boolean) => {
+        if (id) {
+            sendTyping(id, isTypingNow);
+        }
+    };
+
     const handleMarkAsResolved = async () => {
         if (!id || !claim) return;
-        
+
         setIsUpdating(true);
         try {
             const token = Cookies.get('access_token');
@@ -81,7 +164,7 @@ export const ClaimDetail = () => {
             });
             const estados = await estadosResponse.json();
             const estadoResuelto = estados.find((e: any) => e.nombre === 'Cerrado' || e.nombre === 'Resuelto');
-            
+
             if (!estadoResuelto) throw new Error('Estado "Cerrado" no encontrado');
 
             const userName = (user as any)?.username || user?.email || 'Usuario';
@@ -107,7 +190,7 @@ export const ClaimDetail = () => {
 
     const handleReassign = async () => {
         if (!id || !selectedArea) return;
-        
+
         setIsUpdating(true);
         try {
             const token = Cookies.get('access_token');
@@ -115,7 +198,7 @@ export const ClaimDetail = () => {
 
             const areaData = areas.find(a => a._id === selectedArea);
             const userName = (user as any)?.username || user?.email || 'Usuario';
-            
+
             await updateClaimStatus(
                 id,
                 claim.estado._id,
@@ -185,7 +268,7 @@ export const ClaimDetail = () => {
                 <div>
                     <div className="flex items-center gap-3">
                         <h1 className="text-2xl font-bold text-secondary-900">Reclamo #{claim._id?.slice(-6)}</h1>
-                        <span 
+                        <span
                             className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                             style={{
                                 backgroundColor: claim.estado?.color ? `${claim.estado.color}20` : '#e5e7eb',
@@ -260,36 +343,25 @@ export const ClaimDetail = () => {
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Comentarios</CardTitle>
+                    <Card className="flex flex-col h-[500px]">
+                        <CardHeader className="flex-shrink-0">
+                            <CardTitle>Notas</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {user?.role?.name !== 'client' && (
-                                    <div className="flex gap-4">
-                                        <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium text-sm">
-                                            AU
-                                        </div>
-                                        <div className="flex-1 space-y-2">
-                                            <textarea
-                                                className="w-full rounded-md border border-secondary-200 p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none min-h-[80px]"
-                                                placeholder="Escribe un comentario interno..."
-                                            />
-                                            <div className="flex justify-between items-center">
-                                                <Button variant="ghost" size="sm" className="text-secondary-500">
-                                                    <Paperclip className="h-4 w-4 mr-2" />
-                                                    Adjuntar archivo
-                                                </Button>
-                                                <Button size="sm">
-                                                    <Send className="h-4 w-4 mr-2" />
-                                                    Enviar
-                                                </Button>
-                                            </div>
-                                        </div>
+                        <CardContent className="flex-1 flex flex-col p-4 overflow-hidden">
+                            {chatLoading ? (
+                                <div className="flex-1 flex items-center justify-center">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary-500" />
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex-1 overflow-y-auto mb-4 border rounded-md p-2 bg-gray-50">
+                                        <MessageList messages={messages} isTyping={isTyping} />
                                     </div>
-                                )}
-                            </div>
+                                    <div className="flex-shrink-0">
+                                        <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} />
+                                    </div>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -331,16 +403,16 @@ export const ClaimDetail = () => {
                                 <CardTitle>Acciones</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     className="w-full justify-start"
                                     onClick={() => setShowReassignModal(true)}
                                 >
                                     <User className="mr-2 h-4 w-4" />
                                     Reasignar
                                 </Button>
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     className="w-full justify-start"
                                     onClick={handleMarkAsResolved}
                                     disabled={isUpdating || claim?.estado?.nombre === 'Cerrado' || claim?.estado?.nombre === 'Resuelto'}
