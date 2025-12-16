@@ -21,6 +21,8 @@ import { EstadoReclamoList } from './pages/claim-statuses/EstadoReclamoList';
 import { CreateEditEstadoReclamo } from './pages/claim-statuses/CreateEditEstadoReclamo';
 import { AreasList } from './pages/areas/AreasList';
 import { CreateEditArea } from './pages/areas/CreateEditArea';
+import { ChatList } from './pages/chat/ChatList';
+import { ChatWindow } from './pages/chat/ChatWindow';
 
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -53,9 +55,9 @@ function App() {
             <Route path="claims/new" element={<CreateClaim />} />
             <Route path="claims/:id/edit" element={<CreateClaim />} />
             <Route path="claims/:id" element={<ClaimDetail />} />
-             {/* Solicitud Reclamo */}
-             <Route path="solicitud-reclamo" element={<SolicitudReclamoList />} />
-             <Route path="solicitud-reclamo/new" element={<CreateSolicitudReclamo />} />
+            {/* Solicitud Reclamo */}
+            <Route path="solicitud-reclamo" element={<SolicitudReclamoList />} />
+            <Route path="solicitud-reclamo/new" element={<CreateSolicitudReclamo />} />
             <Route path="users" element={<UsersList />} />
             <Route path="users/new" element={<CreateUser />} />
             <Route path="clients" element={<ClientsList />} />
@@ -67,6 +69,10 @@ function App() {
             <Route path="areas" element={<AreasList />} />
             <Route path="areas/new" element={<CreateEditArea />} />
             <Route path="areas/:id/edit" element={<CreateEditArea />} />
+
+            {/* Chat Routes */}
+            <Route path="chat" element={<ChatList />} />
+            <Route path="chat/:reclamoId" element={<ChatWindow />} />
 
             <Route path="claim-statuses" element={<EstadoReclamoList />} />
             <Route path="claim-statuses/new" element={<CreateEditEstadoReclamo />} />

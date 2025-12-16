@@ -1,5 +1,6 @@
 import React from 'react';
-import { Bell, Search, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Bell, Search, Menu, PanelLeftClose, PanelLeftOpen, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
@@ -34,6 +35,12 @@ export const Header = ({ toggleSidebar, isSidebarOpen }: HeaderProps) => {
             </div>
 
             <div className="flex items-center gap-4">
+                <Link to="/chat">
+                    <Button variant="ghost" size="sm" className="relative rounded-full w-9 h-9 p-0">
+                        <MessageCircle className="h-5 w-5 text-secondary-600" />
+                    </Button>
+                </Link>
+
                 <Button variant="ghost" size="sm" className="relative rounded-full w-9 h-9 p-0">
                     <Bell className="h-5 w-5 text-secondary-600" />
                     <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
