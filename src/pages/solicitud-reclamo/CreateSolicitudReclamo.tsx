@@ -9,8 +9,8 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { getProjectsByClient } from '../../services/projects.service';
 import { getClients } from '../../services/clients.service';
+import { getTiposReclamo } from '../../services/tipoReclamo.service';
 import { environment } from '../../environment/environments';
-import { CLAIM_TYPE_OPTIONS } from '../../types';
 
 export const CreateSolicitudReclamo = () => {
     const navigate = useNavigate();
@@ -18,6 +18,7 @@ export const CreateSolicitudReclamo = () => {
     const [isFetching, setIsFetching] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [projects, setProjects] = useState<any[]>([]);
+    const [tipoReclamos, setTipoReclamos] = useState<any[]>([]);
     // const [clients, setClients] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         tipo: '',
@@ -44,9 +45,13 @@ export const CreateSolicitudReclamo = () => {
                 const client = clientsData.find((c: any) => c.email === user.email);
                 if (!client) throw new Error('No se encontró el cliente para este usuario');
                 setClienteId(client._id);
-                // Cargar solo los proyectos del cliente logueado
-                const projectsData = await getProjectsByClient(client._id, token);
+                // Cargar solo los proyectos del cliente logueado y los tipos de reclamo desde la API
+                const [projectsData, tiposData] = await Promise.all([
+                    getProjectsByClient(client._id, token),
+                    getTiposReclamo(token),
+                ]);
                 setProjects(projectsData);
+                setTipoReclamos(tiposData);
             } catch (err: any) {
                 setError('Error al cargar datos: ' + err.message);
             } finally {
@@ -124,9 +129,13 @@ export const CreateSolicitudReclamo = () => {
                                 <label className="block text-sm font-medium text-secondary-700">Tipo</label>
                                 <Select name="tipo" value={formData.tipo} onChange={handleChange} required>
                                     <option value="">Seleccione un tipo</option>
-                                    {CLAIM_TYPE_OPTIONS.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
+                                    {tipoReclamos.length === 0 ? (
+                                        <option value="">No hay tipos disponibles</option>
+                                    ) : (
+                                        tipoReclamos.map((t: any) => (
+                                            <option key={t._id} value={t._id}>{t.nombre}</option>
+                                        ))
+                                    )}
                                 </Select>
                             </div>
                             
