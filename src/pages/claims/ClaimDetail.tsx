@@ -444,6 +444,8 @@ export const ClaimDetail = () => {
         );
     }
 
+    const isClosed = (claim?.estado?.nombre || '').toString().toLowerCase() === 'cerrado';
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4">
@@ -533,13 +535,11 @@ export const ClaimDetail = () => {
                                     id="file-upload"
                                     type="file"
                                     onChange={handleFileSelect}
-                                    className="block w-full text-sm text-secondary-600
-                                        file:mr-4 file:py-2 file:px-4
-                                        file:rounded-md file:border-0
-                                        file:text-sm file:font-semibold
-                                        file:bg-primary-50 file:text-primary-700
-                                        hover:file:bg-primary-100
-                                        cursor-pointer"
+                                    disabled={isClosed}
+                                    className={cn(
+                                        "block w-full text-sm text-secondary-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100",
+                                        isClosed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                    )}
                                     accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                                 />
                                 <p className="mt-2 text-xs text-secondary-500">
@@ -571,8 +571,9 @@ export const ClaimDetail = () => {
 
                             <Button
                                 onClick={handleFileUpload}
-                                disabled={!selectedFile || isUploadingFile}
+                                disabled={!selectedFile || isUploadingFile || isClosed}
                                 className="w-full"
+                                title={isClosed ? 'No se permiten subidas: reclamo cerrado' : undefined}
                             >
                                 {isUploadingFile ? (
                                     <>
@@ -630,7 +631,7 @@ export const ClaimDetail = () => {
                                                 >
                                                     <Download className="h-4 w-4" />
                                                 </a>
-                                                {user?.role?.name !== 'client' && (
+                                                {user?.role?.name !== 'client' && !isClosed && (
                                                     <button
                                                         onClick={() => handleFileDelete(archivo.id)}
                                                         className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
@@ -662,9 +663,13 @@ export const ClaimDetail = () => {
                                         <div className="flex-1 overflow-y-auto mb-4 border rounded-md p-2 bg-gray-50">
                                             <MessageList messages={messages} isTyping={isTyping} />
                                         </div>
-                                        <div className="flex-shrink-0">
-                                            <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} />
-                                        </div>
+                                        {!isClosed ? (
+                                            <div className="flex-shrink-0">
+                                                <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} />
+                                            </div>
+                                        ) : (
+                                            <div className="p-2 text-xs text-secondary-500">El reclamo está cerrado — no se permiten mensajes internos.</div>
+                                        )}
                                     </>
                                 )}
                             </CardContent>
@@ -673,37 +678,8 @@ export const ClaimDetail = () => {
                 </div>
 
                 <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Línea de Tiempo</CardTitle>
-                        </CardHeader>
-                        <CardContent className="max-h-[500px] overflow-y-auto">
-                            <div className="relative border-l border-secondary-200 ml-3 space-y-8 py-2" ref={timelineRef}>
-                                {claim.historial && claim.historial.length > 0 ? (
-                                    [...claim.historial].reverse().map((event: any, index: number) => (
-                                        <div key={index} className="relative pl-6">
-                                            <div className={cn(
-                                                "absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full ring-4 ring-white",
-                                                index === 0 ? "bg-primary-500" : "bg-secondary-300"
-                                            )} />
-                                            <p className="text-sm font-medium text-secondary-900">{event.accion}</p>
-                                            <p className="text-xs text-secondary-500">
-                                                {new Date(event.fecha).toLocaleDateString()} {new Date(event.fecha).toLocaleTimeString()} - {event.responsable}
-                                            </p>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="relative pl-6">
-                                        <div className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-secondary-300 ring-4 ring-white" />
-                                        <p className="text-sm font-medium text-secondary-900">Sin historial</p>
-                                        <p className="text-xs text-secondary-500">No hay registros de cambios</p>
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {user?.role?.name !== 'client' && (
+                    {/* Actions card moved above timeline and hidden if claim is closed */}
+                    {user?.role?.name !== 'client' && !isClosed && (
                         <Card>
                             <CardHeader>
                                 <CardTitle>Acciones</CardTitle>
@@ -753,6 +729,36 @@ export const ClaimDetail = () => {
                             </CardContent>
                         </Card>
                     )}
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Línea de Tiempo</CardTitle>
+                        </CardHeader>
+                        <CardContent className="max-h-[500px] overflow-y-auto">
+                            <div className="relative border-l border-secondary-200 ml-3 space-y-8 py-2" ref={timelineRef}>
+                                {claim.historial && claim.historial.length > 0 ? (
+                                    [...claim.historial].reverse().map((event: any, index: number) => (
+                                        <div key={index} className="relative pl-6">
+                                            <div className={cn(
+                                                "absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full ring-4 ring-white",
+                                                index === 0 ? "bg-primary-500" : "bg-secondary-300"
+                                            )} />
+                                            <p className="text-sm font-medium text-secondary-900">{event.accion}</p>
+                                            <p className="text-xs text-secondary-500">
+                                                {new Date(event.fecha).toLocaleDateString()} {new Date(event.fecha).toLocaleTimeString()} - {event.responsable}
+                                            </p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="relative pl-6">
+                                        <div className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-secondary-300 ring-4 ring-white" />
+                                        <p className="text-sm font-medium text-secondary-900">Sin historial</p>
+                                        <p className="text-xs text-secondary-500">No hay registros de cambios</p>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 
