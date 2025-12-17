@@ -259,10 +259,12 @@ export const CreateClaim = () => {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-secondary-700">Estado</label>
                                 <select
+                                    disabled={isEditMode}
+                                    title={isEditMode ? 'no puedes editar este campo' : undefined}
                                     name="estado"
                                     value={formData.estado}
                                     onChange={handleChange}
-                                    className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                    className={`flex h-10 w-full rounded-md border border-secondary-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none ${isEditMode ? 'bg-secondary-100 text-secondary-500 cursor-not-allowed' : 'bg-white'}`}
                                 >
                                     <option value="">Seleccionar Estado</option>
                                     {estados.map(estado => (
@@ -361,7 +363,9 @@ export const CreateClaim = () => {
                                 name="descripcion"
                                 value={formData.descripcion}
                                 onChange={handleChange}
-                                className="flex min-h-[120px] w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                disabled={isEditMode}
+                                title={isEditMode ? 'no puedes editar este campo' : undefined}
+                                className={`flex min-h-[120px] w-full rounded-md border border-secondary-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none ${isEditMode ? 'bg-secondary-100 text-secondary-500 cursor-not-allowed' : 'bg-white'}`}
                                 placeholder="Describe el problema en detalle..."
                                 required
                             />
