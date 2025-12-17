@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { AlertCircle, CheckCircle2, Clock, FileSpreadsheet, Image as ImageIcon } from 'lucide-react';
-import { getDashboardStats, getClaimsPerDay, getClaimsByArea, getClaimsByType } from '../services/claims.service';
+import { getDashboardStats, getClaimsPerDay, getClaimsByArea, getClaimsByType, getClaimsByResponsable } from '../services/claims.service';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import { exportToCSV, exportChartAsImage } from '../lib/exportUtils';
@@ -37,6 +37,7 @@ export const Dashboard = () => {
     const [chartData, setChartData] = useState(initialData);
     const [pieChartData, setPieChartData] = useState(initialPieData);
     const [tipoChartData, setTipoChartData] = useState<{ name: string; value: number }[]>([]);
+    const [responsableChartData, setResponsableChartData] = useState<any[]>([]);
 
     useEffect(() => {
         const token = Cookies.get('access_token');
@@ -59,6 +60,12 @@ export const Dashboard = () => {
             getClaimsByType(token).then(data => {
                 if (data && data.length > 0) {
                     setTipoChartData(data);
+                }
+            }).catch(console.error);
+
+            getClaimsByResponsable(token).then(data => {
+                if (data && data.length > 0) {
+                    setResponsableChartData(data);
                 }
             }).catch(console.error);
         }
@@ -265,6 +272,68 @@ export const Dashboard = () => {
                                         }}
                                     />
                                     <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid gap-6">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Reclamos por Responsable</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportToCSV(responsableChartData, 'reclamos-por-responsable')}
+                                title="Exportar a CSV"
+                            >
+                                <FileSpreadsheet className="h-4 w-4 mr-1" />
+                                CSV
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportChartAsImage('responsable-chart-container', 'reclamos-por-responsable')}
+                                title="Descargar como imagen"
+                            >
+                                <ImageIcon className="h-4 w-4 mr-1" />
+                                PNG
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div id="responsable-chart-container">
+                            <ResponsiveContainer width="100%" height={350}>
+                                <BarChart data={responsableChartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="responsable"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: '#f1f5f9' }}
+                                        contentStyle={{
+                                            borderRadius: '8px',
+                                            border: 'none',
+                                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                                        }}
+                                    />
+                                    <Legend />
+                                    <Bar dataKey="asignados" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Asignados" />
+                                    <Bar dataKey="enProceso" fill="#f59e0b" radius={[4, 4, 0, 0]} name="En Proceso" />
+                                    <Bar dataKey="resueltos" fill="#10b981" radius={[4, 4, 0, 0]} name="Resueltos" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>

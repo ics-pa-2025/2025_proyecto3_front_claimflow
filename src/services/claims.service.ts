@@ -129,6 +129,18 @@ export const getClaimsByType = async (token?: string) => {
     return response.json();
 };
 
+export const getClaimsByResponsable = async (token?: string) => {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${CLAIMS_API}/dashboard/chart-responsables`, { headers });
+
+    if (!response.ok) {
+        throw new Error('Error al cargar reclamos por responsable');
+    }
+
+    return response.json();
+};
+
 export const updateClaimResponsables = async (id: string, responsables: string[], historialEntry: { accion: string, responsable: string }, token?: string) => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
