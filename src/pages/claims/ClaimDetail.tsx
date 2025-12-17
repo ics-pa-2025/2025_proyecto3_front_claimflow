@@ -334,16 +334,32 @@ export const ClaimDetail = () => {
             if (!token) throw new Error('No autenticado');
 
             const userName = (user as any)?.username || user?.email || 'Usuario';
+            // Decide new estado: if currently 'recibido' -> 'Asignado', else -> 'Reasignado'
+            const currentStatus = (claim?.estado?.nombre || '').toString().toLowerCase();
+            const targetEstadoName = currentStatus === 'recibido' ? 'Asignado' : 'Reasignado';
+            const targetEstadoObj = estados.find((e: any) => (e.nombre || '').toString().toLowerCase() === targetEstadoName.toLowerCase());
+            const targetEstadoId = targetEstadoObj ? targetEstadoObj._id : undefined;
 
-            await updateClaimResponsables(
-                id,
-                selectedResponsables,
-                {
-                    accion: 'Actualización de responsables asignados',
-                    responsable: userName
+            const historialAccion = `Responsables asignados: ${selectedResponsables.join(', ')}`;
+
+            // Patch reclamo with responsables, optional estado, and newHistorialEntry
+            const response = await fetch(`${environment.apiUrl}/reclamo/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
-                token
-            );
+                body: JSON.stringify({
+                    responsables: selectedResponsables,
+                    ...(targetEstadoId ? { estado: targetEstadoId } : {}),
+                    newHistorialEntry: { accion: historialAccion, responsable: userName }
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.message || 'Error al actualizar responsables');
+            }
 
             // Refresh claim data
             const updatedClaim = await getClaimById(id, token);
@@ -444,7 +460,11 @@ export const ClaimDetail = () => {
         );
     }
 
-    const isClosed = (claim?.estado?.nombre || '').toString().toLowerCase() === 'cerrado';
+    const statusName = (claim?.estado?.nombre || '').toString().toLowerCase();
+    const isClosed = statusName === 'cerrado';
+    const isReceived = statusName === 'recibido';
+    const hasResponsables = Array.isArray(claim?.responsables) && claim.responsables.length > 0;
+    const canInteract = !isClosed && (!isReceived || hasResponsables);
 
     return (
         <div className="space-y-6">
@@ -535,10 +555,10 @@ export const ClaimDetail = () => {
                                     id="file-upload"
                                     type="file"
                                     onChange={handleFileSelect}
-                                    disabled={isClosed}
+                                    disabled={!canInteract}
                                     className={cn(
                                         "block w-full text-sm text-secondary-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100",
-                                        isClosed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                        !canInteract ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                                     )}
                                     accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                                 />
@@ -571,9 +591,9 @@ export const ClaimDetail = () => {
 
                             <Button
                                 onClick={handleFileUpload}
-                                disabled={!selectedFile || isUploadingFile || isClosed}
+                                disabled={!selectedFile || isUploadingFile || !canInteract}
                                 className="w-full"
-                                title={isClosed ? 'No se permiten subidas: reclamo cerrado' : undefined}
+                                title={!canInteract ? (isClosed ? 'No se permiten subidas: reclamo cerrado' : 'Asigna un responsable para habilitar subidas') : undefined}
                             >
                                 {isUploadingFile ? (
                                     <>
@@ -631,7 +651,7 @@ export const ClaimDetail = () => {
                                                 >
                                                     <Download className="h-4 w-4" />
                                                 </a>
-                                                {user?.role?.name !== 'client' && !isClosed && (
+                                                {user?.role?.name !== 'client' && canInteract && (
                                                     <button
                                                         onClick={() => handleFileDelete(archivo.id)}
                                                         className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
@@ -663,12 +683,14 @@ export const ClaimDetail = () => {
                                         <div className="flex-1 overflow-y-auto mb-4 border rounded-md p-2 bg-gray-50">
                                             <MessageList messages={messages} isTyping={isTyping} />
                                         </div>
-                                        {!isClosed ? (
+                                        {canInteract ? (
                                             <div className="flex-shrink-0">
                                                 <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} />
                                             </div>
                                         ) : (
-                                            <div className="p-2 text-xs text-secondary-500">El reclamo está cerrado — no se permiten mensajes internos.</div>
+                                            <div className="p-2 text-xs text-secondary-500">
+                                                {isClosed ? 'El reclamo está cerrado — no se permiten mensajes internos.' : (isReceived ? 'El reclamo está en estado Recibido — asigna un responsable para habilitar mensajes.' : '')}
+                                            </div>
                                         )}
                                     </>
                                 )}
@@ -680,52 +702,82 @@ export const ClaimDetail = () => {
                 <div className="space-y-6">
                     {/* Actions card moved above timeline and hidden if claim is closed */}
                     {user?.role?.name !== 'client' && !isClosed && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Acciones</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-start"
-                                    onClick={() => setShowReassignModal(true)}
-                                >
-                                    <User className="mr-2 h-4 w-4" />
-                                    Reasignar
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-start"
-                                    onClick={() => setShowEstadoModal(true)}
-                                >
-                                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                                    Cambiar Estado
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-start"
-                                    onClick={() => {
-                                        // Initialize selected with current
-                                        setSelectedResponsables(claim.responsables || []);
-                                        setShowResponsablesModal(true);
-                                    }}
-                                >
-                                    <User className="mr-2 h-4 w-4" />
-                                    Gestionar Responsables
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-start"
-                                    onClick={handleMarkAsResolved}
-                                    disabled={isUpdating || claim?.estado?.nombre === 'Cerrado' || claim?.estado?.nombre === 'Resuelto'}
-                                >
-                                    {isUpdating ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
+                        isReceived ? (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Acciones</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start"
+                                        onClick={() => {
+                                            setSelectedResponsables(claim.responsables || []);
+                                            setShowResponsablesModal(true);
+                                        }}
+                                    >
+                                        <User className="mr-2 h-4 w-4" />
+                                        Asignar Responsable
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Acciones</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start"
+                                        onClick={() => setShowReassignModal(true)}
+                                    >
+                                        <User className="mr-2 h-4 w-4" />
+                                        Reasignar
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start"
+                                        onClick={() => setShowEstadoModal(true)}
+                                    >
                                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                                    )}
-                                    {claim?.estado?.nombre === 'Cerrado' || claim?.estado?.nombre === 'Resuelto' ? 'Ya Resuelto' : 'Marcar como Resuelto'}
-                                </Button>
+                                        Cambiar Estado
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start"
+                                        onClick={() => {
+                                            // Initialize selected with current
+                                            setSelectedResponsables(claim.responsables || []);
+                                            setShowResponsablesModal(true);
+                                        }}
+                                    >
+                                        <User className="mr-2 h-4 w-4" />
+                                        Gestionar Responsables
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start"
+                                        onClick={handleMarkAsResolved}
+                                        disabled={isUpdating || claim?.estado?.nombre === 'Cerrado' || claim?.estado?.nombre === 'Resuelto'}
+                                    >
+                                        {isUpdating ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        )}
+                                        {claim?.estado?.nombre === 'Cerrado' || claim?.estado?.nombre === 'Resuelto' ? 'Ya Resuelto' : 'Marcar como Resuelto'}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )
+                    )}
+
+                    {/* Warning card shown when estado is Recibido and no responsables assigned */}
+                    {isReceived && !hasResponsables && (
+                        <Card>
+                            <CardContent>
+                                <div className="p-3 text-sm text-secondary-700">Asigne un responsable para habilitar las opciones</div>
                             </CardContent>
                         </Card>
                     )}
