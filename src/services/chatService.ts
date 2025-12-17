@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
+import { environment } from '../environment/environments';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = environment.apiUrl;
 
 interface Mensaje {
     _id: string;

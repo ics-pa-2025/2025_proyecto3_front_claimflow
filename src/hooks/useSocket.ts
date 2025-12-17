@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import { useAuth } from '../context/AuthContext';
+import { environment } from '../environment/environments';
 
 interface UseSocketReturn {
   socket: Socket | null;
@@ -28,7 +29,7 @@ export const useSocket = (): UseSocketReturn => {
       const userRole = user.role?.name || 'client';
 
       // Initialize socket connection
-      const socket = io('http://localhost:3000', {
+      const socket = io(environment.apiUrl, {
         auth: {
           token,
           userId: user.id,
