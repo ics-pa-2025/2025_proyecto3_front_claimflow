@@ -6,7 +6,8 @@ import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
-import { getClaimById, updateClaimStatus } from '../../services/claims.service';
+import { getClaimById, updateClaimStatus, updateClaimResponsables } from '../../services/claims.service';
+import { getUsers } from '../../services/users.service';
 import Cookies from 'js-cookie';
 import { environment } from '../../environment/environments';
 import { useSocket } from '../../hooks/useSocket';
@@ -40,6 +41,11 @@ export const ClaimDetail = () => {
     const [estados, setEstados] = useState<any[]>([]);
     const [selectedArea, setSelectedArea] = useState<string>('');
     const [selectedEstado, setSelectedEstado] = useState<string>('');
+
+    // Responsibles State
+    const [showResponsablesModal, setShowResponsablesModal] = useState(false);
+    const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+    const [selectedResponsables, setSelectedResponsables] = useState<string[]>([]);
     const timelineRef = useRef<HTMLDivElement>(null);
 
     // Chat State
@@ -81,7 +87,7 @@ export const ClaimDetail = () => {
             try {
                 const token = Cookies.get('access_token');
                 if (!token) return;
-                
+
                 const [areasResponse, estadosResponse] = await Promise.all([
                     fetch(`${environment.apiUrl}/area`, {
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -90,18 +96,29 @@ export const ClaimDetail = () => {
                         headers: { 'Authorization': `Bearer ${token}` }
                     })
                 ]);
-                
+
                 const areasData = await areasResponse.json();
                 const estadosData = await estadosResponse.json();
-                
+
                 setAreas(areasData);
                 setEstados(estadosData);
+
+                // Fetch users for assignment if admin/internal
+                if (user?.role?.name !== 'client') {
+                    try {
+                        const users = await getUsers(token);
+                        setAvailableUsers(users);
+                    } catch (e) {
+                        console.error("Error loading users", e);
+                    }
+                }
+
             } catch (err) {
                 console.error('Error fetching data:', err);
             }
         };
         fetchData();
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         if (!id) return;
@@ -274,6 +291,38 @@ export const ClaimDetail = () => {
             setSelectedEstado('');
         } catch (err: any) {
             alert(err.message || 'Error al cambiar el estado');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+
+    const handleUpdateResponsables = async () => {
+        if (!id) return;
+
+        setIsUpdating(true);
+        try {
+            const token = Cookies.get('access_token');
+            if (!token) throw new Error('No autenticado');
+
+            const userName = (user as any)?.username || user?.email || 'Usuario';
+
+            await updateClaimResponsables(
+                id,
+                selectedResponsables,
+                {
+                    accion: 'Actualización de responsables asignados',
+                    responsable: userName
+                },
+                token
+            );
+
+            // Refresh claim data
+            const updatedClaim = await getClaimById(id, token);
+            setClaim(updatedClaim);
+            setShowResponsablesModal(false);
+        } catch (err: any) {
+            alert(err.message || 'Error al actualizar responsables');
         } finally {
             setIsUpdating(false);
         }
@@ -472,6 +521,18 @@ export const ClaimDetail = () => {
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start"
+                                    onClick={() => {
+                                        // Initialize selected with current
+                                        setSelectedResponsables(claim.responsables || []);
+                                        setShowResponsablesModal(true);
+                                    }}
+                                >
+                                    <User className="mr-2 h-4 w-4" />
+                                    Gestionar Responsables
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
                                     onClick={handleMarkAsResolved}
                                     disabled={isUpdating || claim?.estado?.nombre === 'Cerrado' || claim?.estado?.nombre === 'Resuelto'}
                                 >
@@ -589,6 +650,60 @@ export const ClaimDetail = () => {
                                     )}
                                 </Button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Responsables */}
+            {showResponsablesModal && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-white/10">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl border border-secondary-200">
+                        <h3 className="text-lg font-semibold text-secondary-900 mb-4">Gestionar Responsables</h3>
+                        <div className="space-y-4 max-h-[300px] overflow-y-auto p-1">
+                            {availableUsers.map((u) => {
+                                const uid = u.id || u._id;
+                                const isSelected = selectedResponsables.includes(uid);
+                                return (
+                                    <div key={uid} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer" onClick={() => {
+                                        if (isSelected) {
+                                            setSelectedResponsables(prev => prev.filter(id => id !== uid));
+                                        } else {
+                                            setSelectedResponsables(prev => [...prev, uid]);
+                                        }
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() => { }} // Handle on parent div click
+                                            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                        />
+                                        <span className="text-sm text-gray-700">{u.username || u.email}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="flex gap-2 justify-end mt-4">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowResponsablesModal(false)}
+                                disabled={isUpdating}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                onClick={handleUpdateResponsables}
+                                disabled={isUpdating}
+                            >
+                                {isUpdating ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar Cambios'
+                                )}
+                            </Button>
                         </div>
                     </div>
                 </div>

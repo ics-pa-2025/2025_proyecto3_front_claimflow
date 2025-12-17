@@ -62,6 +62,7 @@ export interface Claim {
     clientId: string;
     projectId: string;
     assignedTo?: string; // User ID
+    responsables?: string[]; // Array of User IDs
     createdAt: string;
     updatedAt: string;
     files?: string[];

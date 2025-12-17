@@ -128,3 +128,23 @@ export const getClaimsByArea = async (token: string) => {
 
     return response.json();
 };
+
+export const updateClaimResponsables = async (id: string, responsables: string[], historialEntry: { accion: string, responsable: string }, token: string) => {
+    const response = await fetch(`${CLAIMS_API}/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            responsables: responsables,
+            newHistorialEntry: historialEntry
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error('Error al actualizar los responsables del reclamo');
+    }
+
+    return response.json();
+};
