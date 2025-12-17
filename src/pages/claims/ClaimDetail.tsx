@@ -35,8 +35,11 @@ export const ClaimDetail = () => {
     const [error, setError] = useState<string | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
     const [showReassignModal, setShowReassignModal] = useState(false);
+    const [showEstadoModal, setShowEstadoModal] = useState(false);
     const [areas, setAreas] = useState<any[]>([]);
+    const [estados, setEstados] = useState<any[]>([]);
     const [selectedArea, setSelectedArea] = useState<string>('');
+    const [selectedEstado, setSelectedEstado] = useState<string>('');
     const timelineRef = useRef<HTMLDivElement>(null);
 
     // Chat State
@@ -74,20 +77,30 @@ export const ClaimDetail = () => {
     }, [claim]);
 
     useEffect(() => {
-        const fetchAreas = async () => {
+        const fetchData = async () => {
             try {
                 const token = Cookies.get('access_token');
                 if (!token) return;
-                const response = await fetch(`${environment.apiUrl}/area`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                setAreas(data);
+                
+                const [areasResponse, estadosResponse] = await Promise.all([
+                    fetch(`${environment.apiUrl}/area`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`${environment.apiUrl}/estado-reclamo`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+                
+                const areasData = await areasResponse.json();
+                const estadosData = await estadosResponse.json();
+                
+                setAreas(areasData);
+                setEstados(estadosData);
             } catch (err) {
-                console.error('Error fetching areas:', err);
+                console.error('Error fetching data:', err);
             }
         };
-        fetchAreas();
+        fetchData();
     }, []);
 
     useEffect(() => {
@@ -228,6 +241,39 @@ export const ClaimDetail = () => {
             setSelectedArea('');
         } catch (err: any) {
             alert(err.message || 'Error al reasignar el reclamo');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleChangeEstado = async () => {
+        if (!id || !selectedEstado) return;
+
+        setIsUpdating(true);
+        try {
+            const token = Cookies.get('access_token');
+            if (!token) throw new Error('No autenticado');
+
+            const estadoData = estados.find(e => e._id === selectedEstado);
+            const userName = (user as any)?.username || user?.email || 'Usuario';
+
+            await updateClaimStatus(
+                id,
+                selectedEstado,
+                {
+                    accion: `Estado cambiado a: ${estadoData?.nombre || 'Nuevo estado'}`,
+                    responsable: userName
+                },
+                token
+            );
+
+            // Refresh claim data
+            const updatedClaim = await getClaimById(id, token);
+            setClaim(updatedClaim);
+            setShowEstadoModal(false);
+            setSelectedEstado('');
+        } catch (err: any) {
+            alert(err.message || 'Error al cambiar el estado');
         } finally {
             setIsUpdating(false);
         }
@@ -375,7 +421,7 @@ export const ClaimDetail = () => {
                         <CardHeader>
                             <CardTitle>Línea de Tiempo</CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="max-h-[500px] overflow-y-auto">
                             <div className="relative border-l border-secondary-200 ml-3 space-y-8 py-2" ref={timelineRef}>
                                 {claim.historial && claim.historial.length > 0 ? (
                                     [...claim.historial].reverse().map((event: any, index: number) => (
@@ -414,6 +460,14 @@ export const ClaimDetail = () => {
                                 >
                                     <User className="mr-2 h-4 w-4" />
                                     Reasignar
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() => setShowEstadoModal(true)}
+                                >
+                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                    Cambiar Estado
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -479,6 +533,59 @@ export const ClaimDetail = () => {
                                         </>
                                     ) : (
                                         'Reasignar'
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de cambio de estado */}
+            {showEstadoModal && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-white/10">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl border border-secondary-200">
+                        <h3 className="text-lg font-semibold text-secondary-900 mb-4">Cambiar Estado</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                                    Seleccionar nuevo estado
+                                </label>
+                                <select
+                                    className="w-full rounded-md border border-secondary-200 p-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                    value={selectedEstado}
+                                    onChange={(e) => setSelectedEstado(e.target.value)}
+                                >
+                                    <option value="">Seleccione un estado</option>
+                                    {estados.map((estado) => (
+                                        <option key={estado._id} value={estado._id}>
+                                            {estado.nombre}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex gap-2 justify-end">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setShowEstadoModal(false);
+                                        setSelectedEstado('');
+                                    }}
+                                    disabled={isUpdating}
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    onClick={handleChangeEstado}
+                                    disabled={!selectedEstado || isUpdating}
+                                >
+                                    {isUpdating ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Cambiando...
+                                        </>
+                                    ) : (
+                                        'Cambiar Estado'
                                     )}
                                 </Button>
                             </div>
