@@ -179,6 +179,22 @@ export const CreateClaim = () => {
         setError(null);
 
         try {
+            // Simple validations
+            if (!formData.tipo) {
+                setError('Seleccione un tipo de reclamo');
+                setIsLoading(false);
+                return;
+            }
+            if (!formData.proyecto && !formData.cliente) {
+                setError('Debe seleccionar un proyecto o cliente');
+                setIsLoading(false);
+                return;
+            }
+            if (!formData.descripcion || formData.descripcion.trim().length < 10) {
+                setError('Descripción muy corta (min 10 caracteres)');
+                setIsLoading(false);
+                return;
+            }
             const token = Cookies.get('access_token');
             if (!token) throw new Error("No hay sesión activa");
 

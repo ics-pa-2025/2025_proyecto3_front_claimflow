@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isNotEmpty } from '../../lib/validators';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -63,6 +64,13 @@ export const CreateProject = () => {
         e.preventDefault();
         setIsSaving(true);
         setError(null);
+
+        // Simple validation
+        if (!isNotEmpty(formData.nombre)) {
+            setError('El nombre del proyecto es requerido');
+            setIsSaving(false);
+            return;
+        }
 
         try {
             const token = Cookies.get('access_token');

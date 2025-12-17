@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isEmail, isDniValid, minLength, isNotEmpty, isAlpha, isNumeric } from '../../lib/validators';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -46,6 +47,7 @@ export const CreateUser = () => {
         address: '',
         roleIds: [] as string[]
     });
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         const loadData = async () => {
@@ -73,10 +75,26 @@ export const CreateUser = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [id]: value
-        }));
+        let sanitized = value;
+
+        // Real-time sanitization per field
+        if (id === 'nombre' || id === 'apellido') {
+            sanitized = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
+        } else if (id === 'dni') {
+            sanitized = value.replace(/\D/g, '');
+            if (sanitized.length > 10) sanitized = sanitized.slice(0, 10);
+        }
+
+        setFormData(prev => ({ ...prev, [id]: sanitized }));
+
+        // live simple validation messages
+        setFieldErrors(prev => ({ ...prev, [id]: '' }));
+        if (id === 'email') {
+            if (sanitized && !isEmail(sanitized)) setFieldErrors(prev => ({ ...prev, email: 'Email inválido' }));
+        }
+        if (id === 'password') {
+            if (sanitized && !minLength(sanitized, 6)) setFieldErrors(prev => ({ ...prev, password: 'Mínimo 6 caracteres' }));
+        }
     };
 
     const handleRoleChange = (roleId: string) => {
@@ -102,6 +120,20 @@ export const CreateUser = () => {
         e.preventDefault();
         setIsSaving(true);
         setError(null);
+
+        // Final minimal checks before submit
+        const missing = !formData.nombre || !formData.apellido || !formData.email || !formData.password;
+        const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
+        if (missing) {
+            setError('Complete los campos requeridos');
+            setIsSaving(false);
+            return;
+        }
+        if (hasFieldErrors) {
+            setError('Corrige los errores en el formulario');
+            setIsSaving(false);
+            return;
+        }
 
         try {
             const token = Cookies.get('access_token');
@@ -199,7 +231,10 @@ export const CreateUser = () => {
                                     required
                                     value={formData.nombre}
                                     onChange={handleChange}
+                                    inputMode="text"
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
                                 />
+                                {fieldErrors.nombre && <p className="text-xs text-red-500">{fieldErrors.nombre}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Input
@@ -209,7 +244,10 @@ export const CreateUser = () => {
                                     required
                                     value={formData.apellido}
                                     onChange={handleChange}
+                                    inputMode="text"
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
                                 />
+                                {fieldErrors.apellido && <p className="text-xs text-red-500">{fieldErrors.apellido}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Input
@@ -220,18 +258,22 @@ export const CreateUser = () => {
                                     required
                                     value={formData.email}
                                     onChange={handleChange}
+                                    inputMode="email"
                                 />
+                                {fieldErrors.email && <p className="text-xs text-red-500">{fieldErrors.email}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Input
                                     id="password"
                                     type="password"
                                     label="Contraseña"
-                                    placeholder="Mínimo 8 caracteres"
+                                    placeholder="Mínimo 6 caracteres"
                                     required
                                     value={formData.password}
                                     onChange={handleChange}
+                                    minLength={6}
                                 />
+                                {fieldErrors.password && <p className="text-xs text-red-500">{fieldErrors.password}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Input
@@ -240,7 +282,11 @@ export const CreateUser = () => {
                                     placeholder="Ej: 12345678"
                                     value={formData.dni}
                                     onChange={handleChange}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    maxLength={10}
                                 />
+                                {fieldErrors.dni && <p className="text-xs text-red-500">{fieldErrors.dni}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Input
