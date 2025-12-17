@@ -4,7 +4,7 @@ import { Plus, Search, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
-import { getEstadosReclamo, deleteEstadoReclamo } from '../../services/estadoReclamo.service';
+import { getEstadosReclamo, deleteEstadoReclamo, updateEstadoReclamo } from '../../services/estadoReclamo.service';
 import Cookies from 'js-cookie';
 import { EstadoReclamo } from '../../types';
 
@@ -44,14 +44,15 @@ export const EstadoReclamoList = () => {
     ].map(n => n.toLowerCase());
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('¿Está seguro de eliminar este estado?')) return;
+        if (!window.confirm('¿Está seguro de marcar como inactivo este estado?')) return;
         try {
             const token = Cookies.get('access_token');
             if (!token) return;
-            await deleteEstadoReclamo(id, token);
+            // Instead of deleting, mark as inactive
+            await updateEstadoReclamo(id, { activo: false }, token);
             fetchEstados(); // Reload list
         } catch (err: any) {
-            alert('Error al eliminar: ' + err.message);
+            alert('Error al marcar como inactivo: ' + err.message);
         }
     };
 
