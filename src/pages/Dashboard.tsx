@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { AlertCircle, CheckCircle2, Clock, FileSpreadsheet, Image as ImageIcon } from 'lucide-react';
-import { getDashboardStats, getClaimsPerDay, getClaimsByArea } from '../services/claims.service';
+import { getDashboardStats, getClaimsPerDay, getClaimsByArea, getClaimsByType } from '../services/claims.service';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import { exportToCSV, exportChartAsImage } from '../lib/exportUtils';
@@ -36,6 +36,7 @@ export const Dashboard = () => {
     });
     const [chartData, setChartData] = useState(initialData);
     const [pieChartData, setPieChartData] = useState(initialPieData);
+    const [tipoChartData, setTipoChartData] = useState<{ name: string; value: number }[]>([]);
 
     useEffect(() => {
         const token = Cookies.get('access_token');
@@ -52,6 +53,12 @@ export const Dashboard = () => {
                 // Only update if we have data, otherwise keep initial structure or handle empty state
                 if (data && data.length > 0) {
                     setPieChartData(data);
+                }
+            }).catch(console.error);
+
+            getClaimsByType(token).then(data => {
+                if (data && data.length > 0) {
+                    setTipoChartData(data);
                 }
             }).catch(console.error);
         }
@@ -199,6 +206,67 @@ export const Dashboard = () => {
                                     <span className="text-sm text-secondary-600">{entry.name}</span>
                                 </div>
                             ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid gap-6">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Distribución por Tipo de Reclamo</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportToCSV(tipoChartData, 'reclamos-por-tipo')}
+                                title="Exportar a CSV"
+                            >
+                                <FileSpreadsheet className="h-4 w-4 mr-1" />
+                                CSV
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportChartAsImage('tipo-chart-container', 'reclamos-por-tipo')}
+                                title="Descargar como imagen"
+                            >
+                                <ImageIcon className="h-4 w-4 mr-1" />
+                                PNG
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div id="tipo-chart-container">
+                            <ResponsiveContainer width="100%" height={350}>
+                                <BarChart data={tipoChartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        type="category"
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        type="number"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: '#f1f5f9' }}
+                                        contentStyle={{
+                                            borderRadius: '8px',
+                                            border: 'none',
+                                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                                        }}
+                                    />
+                                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </CardContent>
                 </Card>
