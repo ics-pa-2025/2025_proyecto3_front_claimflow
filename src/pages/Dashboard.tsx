@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { AlertCircle, CheckCircle2, Clock } from 'lucide-react';
-import { getDashboardStats, getClaimsPerDay, getClaimsByArea } from '../services/claims.service';
+import { AlertCircle, CheckCircle2, Clock, FileSpreadsheet, Image as ImageIcon } from 'lucide-react';
+import { getDashboardStats, getClaimsPerDay, getClaimsByArea, getClaimsByType } from '../services/claims.service';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
+import { exportToCSV, exportChartAsImage } from '../lib/exportUtils';
+import { Button } from '../components/ui/Button';
 
 const initialData = [
     { name: 'Lun', reclamos: 0 },
@@ -29,10 +31,12 @@ export const Dashboard = () => {
         porcentajeCrecimiento: '',
         diferenciaMesAnterior: '',
         reclamosEnProceso: 0,
-        reclamosFinalizados: 0
+        reclamosFinalizados: 0,
+        avgResolutionDays: 0,
     });
     const [chartData, setChartData] = useState(initialData);
     const [pieChartData, setPieChartData] = useState(initialPieData);
+    const [tipoChartData, setTipoChartData] = useState<{ name: string; value: number }[]>([]);
 
     useEffect(() => {
         const token = Cookies.get('access_token');
@@ -49,6 +53,12 @@ export const Dashboard = () => {
                 // Only update if we have data, otherwise keep initial structure or handle empty state
                 if (data && data.length > 0) {
                     setPieChartData(data);
+                }
+            }).catch(console.error);
+
+            getClaimsByType(token).then(data => {
+                if (data && data.length > 0) {
+                    setTipoChartData(data);
                 }
             }).catch(console.error);
         }
@@ -69,6 +79,16 @@ export const Dashboard = () => {
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.totalReclamos.toLocaleString()}</div>
                         <p className="text-xs text-secondary-500">{stats.diferenciaMesAnterior}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Promedio resolución (días)</CardTitle>
+                        <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{Number((stats as any).avgResolutionDays).toFixed(2)}</div>
+                        <p className="text-xs text-muted-foreground">Promedio para reclamos cerrados</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -96,45 +116,89 @@ export const Dashboard = () => {
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Reclamos por Día</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportToCSV(chartData, 'reclamos-por-dia')}
+                                title="Exportar a CSV"
+                            >
+                                <FileSpreadsheet className="h-4 w-4 mr-1" />
+                                CSV
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportChartAsImage('bar-chart-container', 'reclamos-por-dia')}
+                                title="Descargar como imagen"
+                            >
+                                <ImageIcon className="h-4 w-4 mr-1" />
+                                PNG
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent className="pl-2">
-                        <ResponsiveContainer width="100%" height={350}>
-                            <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-                                <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                <Bar dataKey="reclamos" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <div id="bar-chart-container">
+                            <ResponsiveContainer width="100%" height={350}>
+                                <BarChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                                    <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                    <Bar dataKey="reclamos" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </CardContent>
                 </Card>
                 <Card className="col-span-3">
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Distribución por Área</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportToCSV(pieChartData, 'distribucion-por-area')}
+                                title="Exportar a CSV"
+                            >
+                                <FileSpreadsheet className="h-4 w-4 mr-1" />
+                                CSV
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportChartAsImage('pie-chart-container', 'distribucion-por-area')}
+                                title="Descargar como imagen"
+                            >
+                                <ImageIcon className="h-4 w-4 mr-1" />
+                                PNG
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <ResponsiveContainer width="100%" height={350}>
-                            <PieChart>
-                                <Pie
-                                    data={pieChartData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {pieChartData.map((_entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <div id="pie-chart-container">
+                            <ResponsiveContainer width="100%" height={350}>
+                                <PieChart>
+                                    <Pie
+                                        data={pieChartData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        fill="#8884d8"
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {pieChartData.map((_entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
                         <div className="mt-4 flex justify-center gap-4">
                             {pieChartData.map((entry, index) => (
                                 <div key={entry.name} className="flex items-center gap-2">
@@ -142,6 +206,67 @@ export const Dashboard = () => {
                                     <span className="text-sm text-secondary-600">{entry.name}</span>
                                 </div>
                             ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid gap-6">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Distribución por Tipo de Reclamo</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportToCSV(tipoChartData, 'reclamos-por-tipo')}
+                                title="Exportar a CSV"
+                            >
+                                <FileSpreadsheet className="h-4 w-4 mr-1" />
+                                CSV
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportChartAsImage('tipo-chart-container', 'reclamos-por-tipo')}
+                                title="Descargar como imagen"
+                            >
+                                <ImageIcon className="h-4 w-4 mr-1" />
+                                PNG
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div id="tipo-chart-container">
+                            <ResponsiveContainer width="100%" height={350}>
+                                <BarChart data={tipoChartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        type="category"
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        type="number"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: '#f1f5f9' }}
+                                        contentStyle={{
+                                            borderRadius: '8px',
+                                            border: 'none',
+                                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                                        }}
+                                    />
+                                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </CardContent>
                 </Card>

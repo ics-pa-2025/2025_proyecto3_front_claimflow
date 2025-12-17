@@ -77,6 +77,22 @@ export const CreateSolicitudReclamo = () => {
         setIsLoading(true);
         setError(null);
         try {
+            // Simple validations
+            if (!formData.tipo) {
+                setError('Seleccione un tipo de reclamo');
+                setIsLoading(false);
+                return;
+            }
+            if (!formData.proyecto) {
+                setError('Seleccione un proyecto');
+                setIsLoading(false);
+                return;
+            }
+            if (!formData.descripcion || formData.descripcion.trim().length < 10) {
+                setError('Descripción muy corta (min 10 caracteres)');
+                setIsLoading(false);
+                return;
+            }
             const token = Cookies.get('access_token');
             if (!token) throw new Error('No hay sesión activa');
             if (!clienteId) throw new Error('No se pudo determinar el cliente actual');

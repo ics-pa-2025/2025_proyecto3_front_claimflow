@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Cookies from 'js-cookie';
+import { isEmail, isDniValid, isNotEmpty, isAlpha, isNumeric } from '../../lib/validators';
 
 export const EditClient = () => {
     const navigate = useNavigate();
@@ -19,6 +20,7 @@ export const EditClient = () => {
         telefono: '',
         dni: ''
     });
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         const fetchClient = async () => {
@@ -57,16 +59,40 @@ export const EditClient = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [id]: value
-        }));
+        let sanitized = value;
+
+        if (id === 'nombre' || id === 'apellido') {
+            sanitized = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
+        } else if (id === 'dni') {
+            sanitized = value.replace(/\D/g, '').slice(0, 10);
+        }
+
+        setFormData(prev => ({ ...prev, [id]: sanitized }));
+
+        // live validation hints
+        setFieldErrors(prev => ({ ...prev, [id]: '' }));
+        if (id === 'email') {
+            if (sanitized && !isEmail(sanitized)) setFieldErrors(prev => ({ ...prev, email: 'Email inválido' }));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
         setError(null);
+        // Minimal final checks: required and any live field errors
+        const missing = !formData.nombre || !formData.apellido || !formData.email;
+        const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
+        if (missing) {
+            setError('Complete los campos requeridos');
+            setIsSaving(false);
+            return;
+        }
+        if (hasFieldErrors) {
+            setError('Corrige los errores en el formulario');
+            setIsSaving(false);
+            return;
+        }
 
         try {
             const token = Cookies.get('access_token');
@@ -135,7 +161,10 @@ export const EditClient = () => {
                                     required
                                     value={formData.nombre}
                                     onChange={handleChange}
+                                    inputMode="text"
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
                                 />
+                                {fieldErrors.nombre && <p className="text-xs text-red-500">{fieldErrors.nombre}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Input
@@ -145,7 +174,10 @@ export const EditClient = () => {
                                     required
                                     value={formData.apellido}
                                     onChange={handleChange}
+                                    inputMode="text"
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
                                 />
+                                {fieldErrors.apellido && <p className="text-xs text-red-500">{fieldErrors.apellido}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Input
@@ -155,7 +187,11 @@ export const EditClient = () => {
                                     required
                                     value={formData.dni}
                                     onChange={handleChange}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    maxLength={10}
                                 />
+                                {fieldErrors.dni && <p className="text-xs text-red-500">{fieldErrors.dni}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Input
@@ -166,7 +202,9 @@ export const EditClient = () => {
                                     required
                                     value={formData.email}
                                     onChange={handleChange}
+                                    inputMode="email"
                                 />
+                                {fieldErrors.email && <p className="text-xs text-red-500">{fieldErrors.email}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Input

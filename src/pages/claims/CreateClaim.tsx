@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, X, Check, Save, Loader2 } from 'lucide-react';
+import { X, Save, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { createClaim, getClaimById, updateClaim } from '../../services/claims.service';
 import { getProjects } from '../../services/projects.service';
@@ -35,8 +34,7 @@ export const CreateClaim = () => {
         proyecto: '',
         cliente: '',
         estado: '',
-        area: '',
-        file: null as File | null
+        area: ''
     });
 
     useEffect(() => {
@@ -78,8 +76,7 @@ export const CreateClaim = () => {
                         cliente: clientId,
                         estado: estadoId,
                         // @ts-ignore
-                        area: areaId,
-                        file: null
+                        area: areaId
                     });
                     // Filter projects based on the loaded (and set) client
                     if (clientId) {
@@ -167,11 +164,7 @@ export const CreateClaim = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFormData(prev => ({ ...prev, file: e.target.files![0] }));
-        }
-    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -179,6 +172,22 @@ export const CreateClaim = () => {
         setError(null);
 
         try {
+            // Simple validations
+            if (!formData.tipo) {
+                setError('Seleccione un tipo de reclamo');
+                setIsLoading(false);
+                return;
+            }
+            if (!formData.proyecto && !formData.cliente) {
+                setError('Debe seleccionar un proyecto o cliente');
+                setIsLoading(false);
+                return;
+            }
+            if (!formData.descripcion || formData.descripcion.trim().length < 10) {
+                setError('Descripción muy corta (min 10 caracteres)');
+                setIsLoading(false);
+                return;
+            }
             const token = Cookies.get('access_token');
             if (!token) throw new Error("No hay sesión activa");
 
@@ -194,9 +203,6 @@ export const CreateClaim = () => {
                 data.append('estado', formData.estado);
             }
 
-            if (formData.file) {
-                data.append('file', formData.file);
-            }
 
             if (isEditMode) {
                 await updateClaim(id, data, token);
@@ -259,10 +265,12 @@ export const CreateClaim = () => {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-secondary-700">Estado</label>
                                 <select
+                                    disabled={isEditMode}
+                                    title={isEditMode ? 'no puedes editar este campo' : undefined}
                                     name="estado"
                                     value={formData.estado}
                                     onChange={handleChange}
-                                    className="flex h-10 w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                    className={`flex h-10 w-full rounded-md border border-secondary-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none ${isEditMode ? 'bg-secondary-100 text-secondary-500 cursor-not-allowed' : 'bg-white'}`}
                                 >
                                     <option value="">Seleccionar Estado</option>
                                     {estados.map(estado => (
@@ -361,27 +369,15 @@ export const CreateClaim = () => {
                                 name="descripcion"
                                 value={formData.descripcion}
                                 onChange={handleChange}
-                                className="flex min-h-[120px] w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                disabled={isEditMode}
+                                title={isEditMode ? 'no puedes editar este campo' : undefined}
+                                className={`flex min-h-[120px] w-full rounded-md border border-secondary-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none ${isEditMode ? 'bg-secondary-100 text-secondary-500 cursor-not-allowed' : 'bg-white'}`}
                                 placeholder="Describe el problema en detalle..."
                                 required
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-secondary-700">Archivo Adjunto</label>
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    type="file"
-                                    onChange={handleFileChange}
-                                    className="cursor-pointer"
-                                />
-                            </div>
-                            {isEditMode && (
-                                <p className="text-xs text-secondary-500">
-                                    Suba un nuevo archivo para reemplazar el existente. Deje en blanco para mantener el actual.
-                                </p>
-                            )}
-                        </div>
+
 
                         <div className="flex justify-end gap-4 pt-4">
                             <Button type="button" variant="outline" onClick={() => navigate('/claims')}>

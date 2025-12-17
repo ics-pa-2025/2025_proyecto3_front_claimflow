@@ -4,7 +4,7 @@ import { Plus, Search, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
-import { getEstadosReclamo, deleteEstadoReclamo } from '../../services/estadoReclamo.service';
+import { getEstadosReclamo, deleteEstadoReclamo, updateEstadoReclamo } from '../../services/estadoReclamo.service';
 import Cookies from 'js-cookie';
 import { EstadoReclamo } from '../../types';
 
@@ -31,15 +31,28 @@ export const EstadoReclamoList = () => {
         }
     };
 
+    // Protected status names that must not be deletable
+    const protectedStatusNames = [
+        'Recibido',
+        'Asignado',
+        'Clasificado',
+        'En proceso',
+        'Reasignado',
+        'Resuelto',
+        'En espera de confirmación',
+        'Cerrado'
+    ].map(n => n.toLowerCase());
+
     const handleDelete = async (id: string) => {
-        if (!window.confirm('¿Está seguro de eliminar este estado?')) return;
+        if (!window.confirm('¿Está seguro de marcar como inactivo este estado?')) return;
         try {
             const token = Cookies.get('access_token');
             if (!token) return;
-            await deleteEstadoReclamo(id, token);
+            // Instead of deleting, mark as inactive
+            await updateEstadoReclamo(id, { activo: false }, token);
             fetchEstados(); // Reload list
         } catch (err: any) {
-            alert('Error al eliminar: ' + err.message);
+            alert('Error al marcar como inactivo: ' + err.message);
         }
     };
 
@@ -121,9 +134,11 @@ export const EstadoReclamoList = () => {
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                                                         </Button>
                                                     </Link>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleDelete(estado._id)}>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 lucide lucide-trash-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                                                    </Button>
+                                                    { !protectedStatusNames.includes((estado.nombre || '').toLowerCase()) && (
+                                                        <Button variant="ghost" size="sm" onClick={() => handleDelete(estado._id)}>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 lucide lucide-trash-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
