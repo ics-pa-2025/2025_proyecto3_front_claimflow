@@ -28,11 +28,9 @@ export const ChatList: React.FC = () => {
     const loadReclamos = async () => {
         try {
             const token = Cookies.get('access_token');
-            const response = await fetch(`${environment.apiUrl}/reclamo`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const headers: any = {};
+            if (token) headers.Authorization = `Bearer ${token}`;
+            const response = await fetch(`${environment.apiUrl}/reclamo`, { headers });
 
             if (!response.ok) {
                 throw new Error('Failed to fetch reclamos');

@@ -1,13 +1,12 @@
 import { environment } from '../environment/environments';
 export const CLAIMS_API = `${environment.apiUrl}/reclamo`;
 
-export const createClaim = async (data: FormData, token: string) => {
+export const createClaim = async (data: FormData, token?: string) => {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(CLAIMS_API, {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`
-            // Content-Type is set automatically by browser for FormData
-        },
+        headers,
         body: data
     });
 
@@ -23,12 +22,10 @@ export const createClaim = async (data: FormData, token: string) => {
     return response.json();
 };
 
-export const getClaims = async (token: string) => {
-    const response = await fetch(CLAIMS_API, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+export const getClaims = async (token?: string) => {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(CLAIMS_API, { headers });
 
     if (!response.ok) {
         throw new Error('Error al cargar reclamos');
@@ -37,12 +34,10 @@ export const getClaims = async (token: string) => {
     return response.json();
 };
 
-export const getClaimById = async (id: string, token: string) => {
-    const response = await fetch(`${CLAIMS_API}/${id}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+export const getClaimById = async (id: string, token?: string) => {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${CLAIMS_API}/${id}`, { headers });
 
     if (!response.ok) {
         throw new Error('Error al cargar el reclamo');
@@ -51,12 +46,12 @@ export const getClaimById = async (id: string, token: string) => {
     return response.json();
 };
 
-export const updateClaim = async (id: string, data: FormData, token: string) => {
+export const updateClaim = async (id: string, data: FormData, token?: string) => {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${CLAIMS_API}/${id}`, {
         method: 'PATCH',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        },
+        headers,
         body: data
     });
 
@@ -67,13 +62,12 @@ export const updateClaim = async (id: string, data: FormData, token: string) => 
     return response.json();
 };
 
-export const updateClaimStatus = async (id: string, estadoId: string, historialEntry: { accion: string, responsable: string }, token: string) => {
+export const updateClaimStatus = async (id: string, estadoId: string, historialEntry: { accion: string, responsable: string }, token?: string) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${CLAIMS_API}/${id}`, {
         method: 'PATCH',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
             estado: estadoId,
             newHistorialEntry: historialEntry
@@ -87,12 +81,10 @@ export const updateClaimStatus = async (id: string, estadoId: string, historialE
     return response.json();
 };
 
-export const getDashboardStats = async (token: string) => {
-    const response = await fetch(`${CLAIMS_API}/dashboard/stats`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+export const getDashboardStats = async (token?: string) => {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${CLAIMS_API}/dashboard/stats`, { headers });
 
     if (!response.ok) {
         throw new Error('Error al cargar estadísticas');
@@ -101,12 +93,10 @@ export const getDashboardStats = async (token: string) => {
     return response.json();
 };
 
-export const getClaimsPerDay = async (token: string) => {
-    const response = await fetch(`${CLAIMS_API}/dashboard/chart-days`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+export const getClaimsPerDay = async (token?: string) => {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${CLAIMS_API}/dashboard/chart-days`, { headers });
 
     if (!response.ok) {
         throw new Error('Error al cargar datos del gráfico');
@@ -115,12 +105,10 @@ export const getClaimsPerDay = async (token: string) => {
     return response.json();
 };
 
-export const getClaimsByArea = async (token: string) => {
-    const response = await fetch(`${CLAIMS_API}/dashboard/chart-areas`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+export const getClaimsByArea = async (token?: string) => {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${CLAIMS_API}/dashboard/chart-areas`, { headers });
 
     if (!response.ok) {
         throw new Error('Error al cargar datos del gráfico de áreas');
@@ -129,13 +117,12 @@ export const getClaimsByArea = async (token: string) => {
     return response.json();
 };
 
-export const updateClaimResponsables = async (id: string, responsables: string[], historialEntry: { accion: string, responsable: string }, token: string) => {
+export const updateClaimResponsables = async (id: string, responsables: string[], historialEntry: { accion: string, responsable: string }, token?: string) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${CLAIMS_API}/${id}`, {
         method: 'PATCH',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
             responsables: responsables,
             newHistorialEntry: historialEntry
