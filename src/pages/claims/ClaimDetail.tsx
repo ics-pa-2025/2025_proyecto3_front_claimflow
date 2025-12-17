@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, User, Building2, AlertTriangle, CheckCircle2, Paperclip, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, AlertTriangle, CheckCircle2, Paperclip, Loader2, Upload, FileText, Download, Trash2, File as FileIcon, Image as ImageIcon } from 'lucide-react';
 import anime from 'animejs';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
@@ -14,6 +14,8 @@ import { useSocket } from '../../hooks/useSocket';
 import { chatService } from '../../services/chatService';
 import { MessageList } from '../../components/chat/MessageList';
 import { MessageInput } from '../../components/chat/MessageInput';
+import { Archivo } from '../../types/archivo.types';
+import { uploadFile, getFilesByReclamo, deleteFile, getDownloadUrl } from '../../services/archivo.service';
 
 interface Mensaje {
     _id: string;
@@ -53,6 +55,14 @@ export const ClaimDetail = () => {
     const [messages, setMessages] = useState<Mensaje[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const [chatLoading, setChatLoading] = useState(true);
+
+    // File Management State
+    const [archivos, setArchivos] = useState<Archivo[]>([]);
+    const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isUploadingFile, setIsUploadingFile] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const [uploadSuccess, setUploadSuccess] = useState(false);
 
     useEffect(() => {
         const fetchClaim = async () => {
@@ -147,6 +157,24 @@ export const ClaimDetail = () => {
             }
         };
     }, [id, isConnected]);
+
+    // Load files when claim loads
+    useEffect(() => {
+        const loadFiles = async () => {
+            if (!id) return;
+            setIsLoadingFiles(true);
+            try {
+                const token = Cookies.get('access_token');
+                const files = await getFilesByReclamo(id, token);
+                setArchivos(files);
+            } catch (error) {
+                console.error('Error loading files:', error);
+            } finally {
+                setIsLoadingFiles(false);
+            }
+        };
+        loadFiles();
+    }, [id]);
 
     useEffect(() => {
         if (!socket) return;
@@ -328,6 +356,70 @@ export const ClaimDetail = () => {
         }
     };
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file size (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            setUploadError('El archivo excede el tamaño máximo de 10MB');
+            return;
+        }
+
+        setSelectedFile(file);
+        setUploadError(null);
+        setUploadSuccess(false);
+    };
+
+    const handleFileUpload = async () => {
+        if (!selectedFile || !id) return;
+
+        setIsUploadingFile(true);
+        setUploadError(null);
+        setUploadSuccess(false);
+
+        try {
+            const token = Cookies.get('access_token');
+            if (!token) throw new Error('No autenticado');
+
+            const newFile = await uploadFile(id, selectedFile, token);
+            setArchivos(prev => [newFile, ...prev]);
+            setSelectedFile(null);
+            setUploadSuccess(true);
+
+            // Clear success message after 3 seconds
+            setTimeout(() => setUploadSuccess(false), 3000);
+
+            // Reset file input
+            const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+            if (fileInput) fileInput.value = '';
+        } catch (err: any) {
+            setUploadError(err.message || 'Error al subir el archivo');
+        } finally {
+            setIsUploadingFile(false);
+        }
+    };
+
+    const handleFileDelete = async (archivoId: string) => {
+        if (!window.confirm('¿Está seguro de eliminar este archivo?')) return;
+
+        try {
+            const token = Cookies.get('access_token');
+            if (!token) throw new Error('No autenticado');
+
+            await deleteFile(archivoId, token);
+            setArchivos(prev => prev.filter(a => a.id !== archivoId));
+        } catch (err: any) {
+            alert(err.message || 'Error al eliminar el archivo');
+        }
+    };
+
+    const getFileIcon = (mimeType: string) => {
+        if (mimeType.startsWith('image/')) return <ImageIcon className="h-8 w-8 text-blue-500" />;
+        if (mimeType === 'application/pdf') return <FileText className="h-8 w-8 text-red-500" />;
+        return <FileIcon className="h-8 w-8 text-gray-500" />;
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -393,17 +485,7 @@ export const ClaimDetail = () => {
                                 </p>
                             </div>
 
-                            {claim.evidencia && (
-                                <div className="space-y-1">
-                                    <span className="text-xs font-medium text-secondary-500 uppercase">Evidencia</span>
-                                    <div className="flex items-center gap-2">
-                                        <Paperclip className="h-4 w-4 text-secondary-400" />
-                                        <a href={claim.evidencia} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline text-sm">
-                                            Ver archivo adjunto
-                                        </a>
-                                    </div>
-                                </div>
-                            )}
+
 
                             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                                 <div className="space-y-1">
@@ -437,6 +519,131 @@ export const ClaimDetail = () => {
                                     </div>
                                 </div>
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* File Upload Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Subir Archivos</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <input
+                                    id="file-upload"
+                                    type="file"
+                                    onChange={handleFileSelect}
+                                    className="block w-full text-sm text-secondary-600
+                                        file:mr-4 file:py-2 file:px-4
+                                        file:rounded-md file:border-0
+                                        file:text-sm file:font-semibold
+                                        file:bg-primary-50 file:text-primary-700
+                                        hover:file:bg-primary-100
+                                        cursor-pointer"
+                                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                                />
+                                <p className="mt-2 text-xs text-secondary-500">
+                                    Formatos permitidos: Imágenes, PDF, Word, Excel, Texto. Tamaño máximo: 10MB
+                                </p>
+                            </div>
+
+                            {selectedFile && (
+                                <div className="flex items-center gap-2 p-3 bg-secondary-50 rounded-md">
+                                    <Paperclip className="h-4 w-4 text-secondary-600" />
+                                    <span className="text-sm text-secondary-900">{selectedFile.name}</span>
+                                    <span className="text-xs text-secondary-500 ml-auto">
+                                        {(selectedFile.size / 1024).toFixed(2)} KB
+                                    </span>
+                                </div>
+                            )}
+
+                            {uploadError && (
+                                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-200">
+                                    {uploadError}
+                                </div>
+                            )}
+
+                            {uploadSuccess && (
+                                <div className="p-3 text-sm text-green-600 bg-green-50 rounded-md border border-green-200">
+                                    ¡Archivo subido exitosamente!
+                                </div>
+                            )}
+
+                            <Button
+                                onClick={handleFileUpload}
+                                disabled={!selectedFile || isUploadingFile}
+                                className="w-full"
+                            >
+                                {isUploadingFile ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Subiendo...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Subir Archivo
+                                    </>
+                                )}
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    {/* Files List Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Archivos Adjuntos</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoadingFiles ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary-600" />
+                                </div>
+                            ) : archivos.length === 0 ? (
+                                <div className="text-center py-8 text-secondary-500">
+                                    <FileIcon className="h-12 w-12 mx-auto mb-2 text-secondary-300" />
+                                    <p className="text-sm">No hay archivos adjuntos</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {archivos.map((archivo) => (
+                                        <div
+                                            key={archivo.id}
+                                            className="flex items-center gap-3 p-3 rounded-md border border-secondary-200 hover:border-primary-300 transition-colors"
+                                        >
+                                            {getFileIcon(archivo.mimeType)}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-secondary-900 truncate">
+                                                    {archivo.nombreOriginal}
+                                                </p>
+                                                <p className="text-xs text-secondary-500">
+                                                    {archivo.tamanoLegible} • {new Date(archivo.fechaCreacion).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <a
+                                                    href={getDownloadUrl(archivo.id)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="p-2 text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
+                                                    title="Descargar"
+                                                >
+                                                    <Download className="h-4 w-4" />
+                                                </a>
+                                                {user?.role?.name !== 'client' && (
+                                                    <button
+                                                        onClick={() => handleFileDelete(archivo.id)}
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
